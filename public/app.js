@@ -194,7 +194,8 @@
     if (item.el) return item.el;
     const a = document.createElement('a');
     a.className = 'article-card';
-    a.href = `/episodes/${item.slug}`;
+    // DB episodes have no static slug page — use the dynamic renderer.
+    a.href = `/episode.html?v=${item.video_id}`;
     a.innerHTML = `
       <div class="article-card-thumb">
         <img src="https://i.ytimg.com/vi/${item.video_id}/maxresdefault.jpg" alt="" loading="lazy">

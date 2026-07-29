@@ -20,13 +20,8 @@ export default async function handler(req, res) {
     return res.status(422).json({ error: 'Not a valid YouTube URL' });
   }
 
-  // Auth — analyzing requires a signed-in user
-  const { user, error: authError, status: authStatus } = await getUser(req);
-  if (authError) {
-    return res.status(authStatus).json({ error: authError, code: 'AUTH_REQUIRED' });
-  }
-
-  // Library hit → instant return (doesn't consume free credits)
+  // Library hit → instant return, open to everyone (browsing is free).
+  // Auth is only required for NEW analyses below.
   const cached = await getEpisodeByVideoId(videoId);
   if (cached) {
     return res.status(200).json({
@@ -49,6 +44,12 @@ export default async function handler(req, res) {
   const geminiKey = process.env.GEMINI_API_KEY;
   if (!supadataKey || !geminiKey) {
     return res.status(500).json({ error: 'Server not configured (missing API keys)' });
+  }
+
+  // New analysis → sign-in required
+  const { user, error: authError, status: authStatus } = await getUser(req);
+  if (authError) {
+    return res.status(authStatus).json({ error: authError, code: 'AUTH_REQUIRED' });
   }
 
   // Free-5 gate — new analyses only
