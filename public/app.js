@@ -4,6 +4,19 @@
 (() => {
   'use strict';
 
+  // ---------- Welcome-back banner after checkout ----------
+  if (new URLSearchParams(window.location.search).get('subscribed') === '1') {
+    const banner = document.createElement('div');
+    banner.className = 'subscribed-banner';
+    banner.innerHTML = '<strong>Welcome to unlimited.</strong> Every podcast you paste is now mapped — no caps.' +
+      '<button type="button" aria-label="Dismiss">&times;</button>';
+    banner.querySelector('button').addEventListener('click', () => banner.remove());
+    const header = document.querySelector('.site-header');
+    if (header) header.after(banner);
+    // Clean the URL
+    history.replaceState(null, '', window.location.pathname);
+  }
+
   // ---------- Analyzer + progress wheel ----------
   const form = document.querySelector('[data-link-form]');
   const progress = document.querySelector('[data-progress]');
@@ -35,6 +48,20 @@
       li.classList.toggle('active', k === key);
     });
     if (progressBar) progressBar.style.width = pct + '%';
+  }
+
+  // Swap the analyzer CTA for a Google sign-in prompt.
+  function showAuthPrompt() {
+    const slot = document.querySelector('[data-auth-prompt]');
+    if (!slot || !window.PAAuth) return;
+    slot.hidden = false;
+    slot.innerHTML = '';
+    const btn = document.createElement('button');
+    btn.className = 'auth-btn auth-btn-lg';
+    btn.type = 'button';
+    btn.textContent = 'Continue with Google to analyze';
+    btn.addEventListener('click', () => window.PAAuth.signIn());
+    slot.appendChild(btn);
   }
 
   function finishProgress() {
@@ -91,19 +118,29 @@
       if (btn) btn.disabled = true;
       startProgress();
       try {
+        const session = await window.PAAuth?.getSession();
+        const headers = { 'Content-Type': 'application/json' };
+        if (session?.access_token) headers.Authorization = `Bearer ${session.access_token}`;
         const r = await fetch('/api/analyze', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers,
           body: JSON.stringify({ url }),
         });
         const data = await r.json().catch(() => ({}));
         if (!r.ok) {
           failProgress(data.error || 'Something went wrong analyzing that episode. Please try again.');
+          if (data.code === 'AUTH_REQUIRED') {
+            showAuthPrompt();
+          } else if (data.code === 'LIMIT_REACHED') {
+            setTimeout(() => { window.location.href = '/pricing.html'; }, 1800);
+          }
           return;
         }
         finishProgress();
-        // Go to the podarticle
-        window.location.href = data.slug ? `/episodes/${encodeURIComponent(data.slug)}` : `/episode.html?v=${data.video_id}`;
+        // Hand the result to the renderer directly — the slug page is only for
+        // library browsing (seed static pages); new analyses render dynamically.
+        try { sessionStorage.setItem('pa_result_' + data.video_id, JSON.stringify(data)); } catch {}
+        window.location.href = `/episode.html?v=${data.video_id}`;
       } catch {
         failProgress('Network error — check your connection and try again.');
       } finally {

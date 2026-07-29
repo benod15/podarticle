@@ -26,6 +26,7 @@
       <nav class="site-nav" aria-label="Main navigation">
         <a href="#how">How it works</a>
         <a href="#feed">Episode library</a>
+        <span data-auth-slot></span>
         <button class="theme-toggle" data-theme-toggle aria-label="Switch to dark mode"></button>
       </nav>
     </div>
@@ -45,6 +46,7 @@
         </button>
       </form>
       <p class="hero-note">Free for your first 5 episodes. Every timestamp is <strong>verified against the actual transcript</strong> before it reaches you.</p>
+      <div class="auth-prompt" data-auth-prompt hidden></div>
 
       <div class="analysis-progress" data-progress hidden>
         <div class="analysis-progress-track">
@@ -193,7 +195,9 @@
     </div>
   </footer>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="theme.js" defer></script>
+  <script src="auth.js" defer></script>
   <script src="app.js" defer></script>
 </body>
 </html>

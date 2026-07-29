@@ -20,7 +20,7 @@
         <span>PodArticle</span>
       </a>
       <nav class="site-nav" aria-label="Main navigation">
-        <a href="index.html#feed">Latest episodes</a>
+        <a href="index.html#feed">Episode library</a>
         <button class="theme-toggle" data-theme-toggle aria-label="Switch to dark mode"></button>
       </nav>
     </div>
@@ -49,7 +49,9 @@
     </div>
   </footer>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="theme.js" defer></script>
+  <script src="auth.js" defer></script>
   <script>
   (function () {
     var root = document.getElementById('episode-root');
@@ -65,16 +67,37 @@
     }
 
     var attempts = 0;
+
+    // Fresh result handed over from the analyzer — render instantly.
+    var stored = null;
+    try { stored = JSON.parse(sessionStorage.getItem('pa_result_' + vid) || 'null'); } catch (e) {}
+    if (stored && stored.analysis) {
+      sessionStorage.removeItem('pa_result_' + vid);
+      render(stored);
+      return;
+    }
+
     function loadEpisode() {
       attempts++;
-      fetch('__PORT_8000__/api/episode/' + encodeURIComponent(vid))
+      var headers = { 'Content-Type': 'application/json' };
+      var authP = window.PAAuth && window.PAAuth.getSession ? window.PAAuth.getSession() : Promise.resolve(null);
+      authP.then(function (session) {
+        if (session && session.access_token) headers.Authorization = 'Bearer ' + session.access_token;
+        return fetch('/api/analyze', {
+          method: 'POST',
+          headers: headers,
+          body: JSON.stringify({ url: 'https://www.youtube.com/watch?v=' + vid })
+        });
+      })
         .then(function (r) {
-          if (!r.ok) throw new Error('Episode not found — run the analysis first.');
-          return r.json();
+          return r.json().then(function (data) {
+            if (!r.ok) throw new Error(data.error || 'Episode not found — run the analysis first.');
+            return data;
+          });
         })
         .then(function (data) { render(data); })
         .catch(function (err) {
-          if (attempts < 4) {
+          if (attempts < 2) {
             setTimeout(loadEpisode, 3000);
             return;
           }
@@ -150,7 +173,7 @@
           '<span class="top5-rank">' + esc(t.rank) + '</span>' +
           '<div class="top5-body"><div class="top5-top-row">' +
           '<span class="top5-title">' + esc(t.title) + '</span>' +
-          '<span class="top5-time">' + esc(t.timestamp || fmtTs(t.seconds)) + '</span></div>' +
+          '<span class="top5-time">' + esc(fmtTs(t.seconds != null ? t.seconds : t.timestamp)) + '</span></div>' +
           '<p class="top5-desc">' + esc(t.description) + '</p></div>' +
           '<span class="top5-play"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="6,4 20,12 6,20"/></svg></span></a>';
       });
@@ -164,11 +187,11 @@
       chapters.forEach(function (c, i) {
         html += '<details class="chapter-group"' + (i === 0 ? ' open' : '') + '>' +
           '<summary class="chapter-summary"><span class="chapter-summary-left">' +
-          '<span class="chapter-time">' + esc(c.timestamp || fmtTs(c.seconds)) + '</span>' +
+          '<span class="chapter-time">' + esc(fmtTs(c.seconds != null ? c.seconds : c.timestamp)) + '</span>' +
           '<span class="chapter-name">' + esc(c.title) + '</span></span>' +
           '<svg class="chapter-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6,9 12,15 18,9"/></svg>' +
           '</summary><div class="chapter-items"><div class="chapter-item">' +
-          '<a class="chapter-item-time" href="' + yt(c.seconds) + '" target="_blank" rel="noopener">' + esc(c.timestamp || fmtTs(c.seconds)) + '</a>' +
+          '<a class="chapter-item-time" href="' + yt(c.seconds) + '" target="_blank" rel="noopener">' + esc(fmtTs(c.seconds != null ? c.seconds : c.timestamp)) + '</a>' +
           '<div class="chapter-item-text"><strong>' + esc(c.title) + '</strong><p>' + esc(c.description) + '</p></div>' +
           '</div></div></details>';
       });

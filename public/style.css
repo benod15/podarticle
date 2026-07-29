@@ -153,6 +153,42 @@ ul[role="list"] { list-style: none; }
 .theme-toggle:hover { background: var(--color-border); color: var(--color-text); }
 .theme-toggle svg { width: 16px; height: 16px; }
 
+.auth-btn {
+  display: inline-flex; align-items: center; gap: .45rem;
+  padding: .42rem .95rem; border-radius: var(--radius-full);
+  border: 1px solid var(--color-border); background: transparent;
+  color: var(--color-text); font-family: inherit; font-size: .85rem; font-weight: 500;
+  cursor: pointer; transition: background var(--transition), border-color var(--transition);
+}
+.auth-btn:hover { background: var(--color-surface-offset); border-color: var(--color-text-muted); }
+.auth-btn-lg {
+  padding: .8rem 1.6rem; font-size: 1rem;
+  background: var(--color-text); color: var(--color-surface); border-color: var(--color-text);
+}
+.auth-btn-lg:hover { background: var(--color-text-muted); color: var(--color-surface); }
+.auth-prompt { margin-top: 1rem; }
+
+.plan-badge {
+  display: inline-flex; align-items: center;
+  padding: .3rem .8rem; border-radius: var(--radius-full);
+  background: #5a8a78; color: #fff;
+  font-size: .72rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
+  margin-right: .35rem;
+}
+
+.subscribed-banner {
+  display: flex; align-items: center; justify-content: center; gap: .6rem;
+  padding: .9rem 2.5rem .9rem 1.5rem;
+  background: #5a8a78; color: #fff;
+  font-size: .95rem; text-align: center; position: relative;
+}
+.subscribed-banner strong { font-weight: 600; }
+.subscribed-banner button {
+  position: absolute; right: 1rem; top: 50%; transform: translateY(-50%);
+  background: none; border: none; color: #fff; font-size: 1.3rem; cursor: pointer; opacity: .8;
+}
+.subscribed-banner button:hover { opacity: 1; }
+
 /* ---------- Hero / tool ---------- */
 .hero {
   padding: clamp(56px, 9vw, 104px) 0 clamp(40px, 6vw, 64px);

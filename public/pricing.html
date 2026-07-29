@@ -24,9 +24,13 @@
     .price-card li::before { content: "✓"; position: absolute; left: 0; color: #5a8a78; font-weight: 600; }
     .price-note { font-size: .85rem; color: #6b675f; margin-top: .5rem; }
     .featured-pill { position: absolute; top: -.8rem; left: 50%; transform: translateX(-50%); background: #5a8a78; color: #fff; font-size: .72rem; letter-spacing: .1em; text-transform: uppercase; padding: .25rem .9rem; border-radius: 999px; font-weight: 600; }
-    .btn-plan { display: block; text-align: center; padding: .85rem; border-radius: 999px; font-weight: 500; text-decoration: none; }
+    .btn-plan { display: block; text-align: center; padding: .85rem; border-radius: 999px; font-weight: 500; text-decoration: none; cursor: pointer; font-family: inherit; font-size: 1rem; width: 100%; }
     .btn-plan.primary { background: #111; color: #f5f3ee; }
     .btn-plan.secondary { border: 1px solid #111; color: #111; }
+    .btn-plan.current, .btn-plan:disabled { opacity: .55; cursor: default; }
+    .btn-plan.current { background: #5a8a78; color: #fff; border-color: #5a8a78; opacity: 1; }
+    .manage-link { text-align: center; margin-top: 1.75rem; font-size: .92rem; color: #6b675f; }
+    .manage-link a { color: #5a8a78; font-weight: 600; }
     .pricing-faq { max-width: 40rem; margin: 0 auto; padding: 0 1.5rem 5rem; }
     .pricing-faq h2 { font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 1.8rem; margin-bottom: 1.5rem; text-align: center; }
     .pricing-faq details { border-bottom: 1px solid #e0ddd6; padding: 1rem 0; }
@@ -45,7 +49,8 @@
         <span>PodArticle</span>
       </a>
       <nav class="site-nav" aria-label="Main navigation">
-        <a href="index.html#feed">Latest episodes</a>
+        <a href="index.html#feed">Episode library</a>
+        <span data-auth-slot></span>
         <button class="theme-toggle" data-theme-toggle aria-label="Switch to dark mode"></button>
       </nav>
     </div>
@@ -83,7 +88,7 @@
           <li>Deep links into YouTube</li>
           <li>Billed $60 once a year</li>
         </ul>
-        <a class="btn-plan primary" href="index.html">Go annual</a>
+        <button class="btn-plan primary" data-plan="annual" type="button">Go annual</button>
       </div>
 
       <div class="price-card">
@@ -96,7 +101,7 @@
           <li>Deep links into YouTube</li>
           <li>Cancel anytime</li>
         </ul>
-        <a class="btn-plan secondary" href="index.html">Go monthly</a>
+        <button class="btn-plan secondary" data-plan="monthly" type="button">Go monthly</button>
       </div>
 
     </section>
@@ -113,7 +118,11 @@
       </details>
       <details>
         <summary>Can I cancel?</summary>
-        <p>Monthly plans cancel anytime and stay active through the end of the billing period. Annual plans are billed once and run for the year.</p>
+        <p>Monthly plans cancel anytime and stay active through the end of the billing period. Annual plans are billed once and run for the year. Manage or cancel your subscription from the "Manage your subscription" link above (visible when you're subscribed), and we'll email you a portal link after checkout too.</p>
+      </details>
+      <details>
+        <summary>How do I contact support?</summary>
+        <p>Email <a href="mailto:podarticle@gmail.com">podarticle@gmail.com</a> and we'll get back to you within a day.</p>
       </details>
       <details>
         <summary>Why does PodArticle exist?</summary>
@@ -139,6 +148,79 @@
     </div>
   </footer>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="theme.js" defer></script>
+  <script src="auth.js" defer></script>
+  <script>
+  // Show the subscriber's current plan and disable re-purchase.
+  function whenAuthReady(cb, tries) {
+    if (window.PAAuth) return cb();
+    if ((tries || 0) > 40) return;
+    setTimeout(function () { whenAuthReady(cb, (tries || 0) + 1); }, 100);
+  }
+  whenAuthReady(async function () {
+    try {
+      const session = await window.PAAuth?.getSession();
+      if (!session) return;
+      const client = window.PAAuth.client;
+      const { data } = await client.from('plans')
+        .select('status, stripe_subscription_id').eq('user_id', session.user.id).maybeSingle();
+      if (data?.status !== 'active') return;
+
+      // Annual price ID ends with 'sd2XRnJ4'; monthly ends with 'nEkeQAAB' — but rather
+      // than hardcode, show a neutral "current plan" state on both paid cards.
+      document.querySelectorAll('[data-plan]').forEach(function (btn) {
+        btn.disabled = true;
+        btn.textContent = 'Your current plan';
+        btn.classList.add('current');
+      });
+
+      // Add a manage/cancel link
+      const grid = document.querySelector('.pricing-grid');
+      if (grid) {
+        const manage = document.createElement('p');
+        manage.className = 'manage-link';
+        manage.innerHTML = 'Want to switch plans or cancel? <a href="#" id="manage-sub">Manage your subscription</a>';
+        grid.after(manage);
+        document.getElementById('manage-sub').addEventListener('click', async function (e) {
+          e.preventDefault();
+          this.textContent = 'Opening your subscription portal…';
+          const r = await fetch('/api/portal', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + session.access_token }
+          });
+          const d = await r.json();
+          if (d.url) window.location.href = d.url;
+          else { this.textContent = d.error || 'Something went wrong'; }
+        });
+      }
+    } catch {}
+  })();
+
+  document.querySelectorAll('[data-plan]').forEach(function (btn) {
+    btn.addEventListener('click', async function () {
+      btn.disabled = true;
+      const original = btn.textContent;
+      btn.textContent = 'Redirecting to checkout…';
+      try {
+        const session = await window.PAAuth?.getSession();
+        const headers = { 'Content-Type': 'application/json' };
+        if (session?.access_token) headers.Authorization = `Bearer ${session.access_token}`;
+        const r = await fetch('/api/checkout', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ plan: btn.dataset.plan })
+        });
+        const data = await r.json();
+        if (!r.ok || !data.url) throw new Error(data.error || 'Checkout failed');
+        window.location.href = data.url;
+      } catch (err) {
+        btn.textContent = original;
+        btn.disabled = false;
+        alert(err.message || 'Something went wrong — please try again.');
+      }
+    });
+  });
+  </script>
 </body>
 </html>

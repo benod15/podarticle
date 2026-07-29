@@ -7,6 +7,7 @@
 import { extractVideoId, fetchMetadata, parseChapters, fetchTranscript, transcriptToLines, TranscriptUnavailable } from '../lib/youtube.js';
 import { analyzeWithGemini } from '../lib/gemini.js';
 import { getEpisodeByVideoId, saveEpisode, slugify } from '../lib/db.js';
+import { getUser, checkAllowance, recordUsage, FREE_LIMIT } from '../lib/auth.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -19,7 +20,13 @@ export default async function handler(req, res) {
     return res.status(422).json({ error: 'Not a valid YouTube URL' });
   }
 
-  // Library hit → instant return
+  // Auth — analyzing requires a signed-in user
+  const { user, error: authError, status: authStatus } = await getUser(req);
+  if (authError) {
+    return res.status(authStatus).json({ error: authError, code: 'AUTH_REQUIRED' });
+  }
+
+  // Library hit → instant return (doesn't consume free credits)
   const cached = await getEpisodeByVideoId(videoId);
   if (cached) {
     return res.status(200).json({
@@ -44,6 +51,16 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'Server not configured (missing API keys)' });
   }
 
+  // Free-5 gate — new analyses only
+  const allowance = await checkAllowance(user.id);
+  if (!allowance.allowed) {
+    return res.status(402).json({
+      error: `You've used your ${FREE_LIMIT} free podarticles. Subscribe for unlimited episode maps.`,
+      code: 'LIMIT_REACHED',
+      upgrade_url: '/pricing.html',
+    });
+  }
+
   try {
     const metadata = await fetchMetadata(videoId, supadataKey);
     const chapters = parseChapters(metadata.description);
@@ -58,6 +75,9 @@ export default async function handler(req, res) {
       transcriptLines,
       apiKey: geminiKey,
     });
+
+    // Count this analysis against the free allowance
+    await recordUsage(user.id, videoId);
 
     // Publish to the library
     let slug = slugify(metadata.title);
