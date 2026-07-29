@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PodArticle — Watch only the parts of any podcast that matter</title>
+  <meta name="description" content="Paste any podcast link. PodArticle maps every topic with verified timestamps so you can watch only the parts that matter.">
+  <meta property="og:title" content="PodArticle — Watch only the parts that matter">
+  <meta property="og:description" content="Turn any podcast into a readable, section-by-section article with verified timestamps.">
+  <meta property="og:type" content="website">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="site-header-inner">
+      <a class="brand-mark" href="index.html" aria-label="PodArticle home">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"/><polygon points="10,8 16,12 10,16" fill="currentColor" stroke="none"/>
+        </svg>
+        <span>PodArticle</span>
+      </a>
+      <nav class="site-nav" aria-label="Main navigation">
+        <a href="#how">How it works</a>
+        <a href="#feed">Episode library</a>
+        <button class="theme-toggle" data-theme-toggle aria-label="Switch to dark mode"></button>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- ============ HERO: the tool ============ -->
+    <section class="hero wrap">
+      <h1>Paste a podcast link. Watch only the parts that <em>matter to you</em>.</h1>
+
+      <form class="link-form" data-link-form>
+        <input type="url" placeholder="Paste any YouTube podcast link..." aria-label="Podcast link">
+        <button type="submit">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 21l-4.35-4.35M17 10.5a6.5 6.5 0 1 1-13 0 6.5 6.5 0 0 1 13 0z"/></svg>
+          Analyze
+        </button>
+      </form>
+      <p class="hero-note">Free for your first 5 episodes. Every timestamp is <strong>verified against the actual transcript</strong> before it reaches you.</p>
+
+      <div class="analysis-progress" data-progress hidden>
+        <div class="analysis-progress-track">
+          <div class="analysis-progress-bar" data-progress-bar></div>
+        </div>
+        <ul class="analysis-stages">
+          <li data-stage="metadata"><span class="stage-dot"></span>Finding the episode</li>
+          <li data-stage="transcript"><span class="stage-dot"></span>Pulling the transcript</li>
+          <li data-stage="analysis"><span class="stage-dot"></span>Mapping sections</li>
+          <li data-stage="save"><span class="stage-dot"></span>Publishing your podarticle</li>
+        </ul>
+        <p class="analysis-error" data-analysis-error hidden></p>
+      </div>
+    </section>
+
+    <!-- ============ Win-win-win ============ -->
+    <section class="strip" id="how">
+      <div class="wrap-wide strip-grid">
+        <div class="strip-item">
+          <div class="strip-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polygon points="5,3 19,12 5,21"/></svg>
+          </div>
+          <h3>For viewers</h3>
+          <p>Skip straight to the moments you care about instead of scrubbing a timeline.</p>
+        </div>
+        <div class="strip-item">
+          <div class="strip-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="3"/><polygon points="10,9 15,12 10,15" fill="currentColor" stroke="none"/></svg>
+          </div>
+          <h3>For creators</h3>
+          <p>Every section you open is a real YouTube view on the creator's channel.</p>
+        </div>
+        <div class="strip-item">
+          <div class="strip-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 2l2.9 6.3 6.9.7-5.2 4.6 1.5 6.8L12 16.9 5.9 20.4l1.5-6.8L2.2 9l6.9-.7z"/></svg>
+          </div>
+          <h3>For everyone</h3>
+          <p>Podcasts get discovered, viewers save hours, and nothing is hidden behind a paywall of silence.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ Feed: proof of quality ============ -->
+    <section class="feed wrap-wide" id="feed">
+      <div class="section-head">
+        <h2>Episode library</h2>
+        <div class="library-controls">
+          <input type="search" class="library-search" data-library-search placeholder="Search shows, episodes, guests..." aria-label="Search the episode library">
+          <select class="library-sort" data-library-sort aria-label="Sort the episode library">
+            <option value="newest">Newest first</option>
+            <option value="az">Show name A–Z</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="article-grid" data-library-grid>
+
+        <a class="article-card" href="episodes/secrets-from-the-greatest-fund-manager.html">
+          <div class="article-card-thumb">
+            <img src="https://i.ytimg.com/vi/0aL-3b4h_qw/maxresdefault.jpg" alt="Secrets From the Greatest Fund Manager of All Time | TCAF 252" loading="lazy">
+          </div>
+          <div class="article-card-body">
+            <span class="article-card-eyebrow">The Compound</span>
+            <h3>Secrets From the Greatest Fund Manager of All Time | TCAF 252</h3>
+            <p>Ron shares his long-term investing philosophy, detailing why he ignores daily market commentary in favor of mission-orie</p>
+            <span class="article-card-meta" style="display:none;"></span>
+          </div>
+        </a>
+
+        <a class="article-card" href="episodes/joe-rogan-experience-2187.html">
+          <div class="article-card-thumb">
+            <img src="https://i.ytimg.com/vi/4T_0Tcts6aM/maxresdefault.jpg" alt="Joe Rogan Experience #2187 - Adam Sandler" loading="lazy">
+          </div>
+          <div class="article-card-body">
+            <span class="article-card-eyebrow">Joe Rogan Experience</span>
+            <h3>Joe Rogan Experience #2187 - Adam Sandler</h3>
+            <p>Adam Sandler joins Joe Rogan to discuss his long career in comedy, acting, and the evolution of the stand-up scene. They</p>
+            <span class="article-card-meta" style="display:none;"></span>
+          </div>
+        </a>
+
+        <a class="article-card" href="episodes/taylor-swift-on-reclaiming-her-masters.html">
+          <div class="article-card-thumb">
+            <img src="https://i.ytimg.com/vi/M2lX9XESvDE/maxresdefault.jpg" alt="Taylor Swift on Reclaiming Her Masters, Wrapping The Eras Tour, and The Life of a Showgirl | NHTV" loading="lazy">
+          </div>
+          <div class="article-card-body">
+            <span class="article-card-eyebrow">New Heights</span>
+            <h3>Taylor Swift on Reclaiming Her Masters, Wrapping The Eras Tour, and The Life of a Showgirl | NHTV</h3>
+            <p>Taylor Swift joins Jason and Travis Kelce to discuss wrapping up the Eras Tour, her rules for planting Easter eggs, and </p>
+            <span class="article-card-meta" style="display:none;"></span>
+          </div>
+        </a>
+
+        <a class="article-card" href="episodes/the-rizzler.html">
+          <div class="article-card-thumb">
+            <img src="https://i.ytimg.com/vi/Yr6HCkBEins/maxresdefault.jpg" alt="The Rizzler | This Past Weekend w/ Theo Von #600" loading="lazy">
+          </div>
+          <div class="article-card-body">
+            <span class="article-card-eyebrow">Theo Von</span>
+            <h3>The Rizzler | This Past Weekend w/ Theo Von #600</h3>
+            <p>Theo Von introduces his guest, known as The Rizzler, discussing his recent online success. The two trade stories about g</p>
+            <span class="article-card-meta" style="display:none;"></span>
+          </div>
+        </a>
+
+        <a class="article-card" href="episodes/urgent-update-ai-sputnik-moment-kimi.html">
+          <div class="article-card-thumb">
+            <img src="https://i.ytimg.com/vi/pSUyLfirP8Y/maxresdefault.jpg" alt="Urgent Update- AI Sputnik Moment: Kimi K3 Released w/ Emad Mostaque | Ep. 272" loading="lazy">
+          </div>
+          <div class="article-card-body">
+            <span class="article-card-eyebrow">Peter H. Diamandis</span>
+            <h3>Urgent Update- AI Sputnik Moment: Kimi K3 Released w/ Emad Mostaque | Ep. 272</h3>
+            <p>The podcast covers the sudden release of China&#x27;s Kimi K3, the largest open-weight AI model to date, which recently reach</p>
+            <span class="article-card-meta" style="display:none;"></span>
+          </div>
+        </a>
+
+      </div>
+    </section>
+
+    <!-- ============ About: the word itself ============ -->
+    <section class="strip" id="about" style="border-top:1px solid var(--border,#e0ddd6);">
+      <div class="wrap" style="text-align:center;max-width:46rem;">
+        <p class="eyebrow" style="margin-bottom:.75rem;">About</p>
+        <h2 style="font-family:'Instrument Serif',serif;font-size:2.2rem;font-weight:400;margin-bottom:1rem;">What's a <em>podarticle</em>?</h2>
+        <p style="color:#6b675f;line-height:1.7;">A podarticle is the article form of a podcast — every section mapped, every moment timestamped, every claim checked against the transcript. Podcasts were made to be heard. Podarticles are made to be navigated. We think the word deserves a place in the dictionary, and we hope reading podarticles becomes your newest addiction.</p>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap-wide footer-inner">
+      <a class="brand-mark" href="index.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"/><polygon points="10,8 16,12 10,16" fill="currentColor" stroke="none"/>
+        </svg>
+        <span>PodArticle</span>
+      </a>
+      <nav class="footer-links" aria-label="Footer">
+        <a href="pricing.html">Pricing</a>
+        <a href="#">For creators</a>
+        <a href="#">Contact</a>
+      </nav>
+      <p class="footer-copy">Made for people who love podcasts but don't have 90 minutes. &copy; 2026 PodArticle.</p>
+    </div>
+  </footer>
+
+  <script src="theme.js" defer></script>
+  <script src="app.js" defer></script>
+</body>
+</html>

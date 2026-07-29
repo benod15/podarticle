@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://podarticle.com/sitemap.xml

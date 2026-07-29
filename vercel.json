@@ -1,0 +1,11 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "functions": {
+    "api/analyze.js": { "maxDuration": 300 },
+    "api/transcript.js": { "maxDuration": 300 },
+    "api/checkout.js": { "maxDuration": 30 }
+  },
+  "rewrites": [
+    { "source": "/episodes/:slug", "destination": "/episodes/:slug.html" }
+  ]
+}

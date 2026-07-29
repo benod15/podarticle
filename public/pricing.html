@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pricing — PodArticle</title>
+  <meta name="description" content="Your first 5 podarticles are free. Then $5/month billed annually, or $10 month-to-month, for unlimited episode maps.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .pricing-hero { text-align: center; padding: 5rem 1.5rem 3rem; }
+    .pricing-hero h1 { font-family: 'Instrument Serif', serif; font-weight: 400; font-size: clamp(2.2rem, 5vw, 3.2rem); margin: .75rem 0 1rem; }
+    .pricing-hero p { color: #6b675f; max-width: 34rem; margin: 0 auto; line-height: 1.7; }
+    .pricing-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.5rem; max-width: 64rem; margin: 0 auto; padding: 2rem 1.5rem 5rem; }
+    .price-card { border: 1px solid #e0ddd6; border-radius: 1.25rem; padding: 2rem; background: #fff; display: flex; flex-direction: column; }
+    .price-card.featured { border-color: #5a8a78; box-shadow: 0 0 0 1px #5a8a78; position: relative; }
+    .price-tag { font-family: 'Instrument Serif', serif; font-size: 2.6rem; margin: .5rem 0; }
+    .price-tag span { font-family: 'DM Sans', sans-serif; font-size: 1rem; color: #6b675f; }
+    .price-name { font-size: .8rem; letter-spacing: .12em; text-transform: uppercase; color: #5a8a78; font-weight: 600; }
+    .price-card ul { list-style: none; padding: 0; margin: 1.25rem 0 1.75rem; flex: 1; }
+    .price-card li { padding: .4rem 0 .4rem 1.5rem; position: relative; color: #3d3a34; font-size: .95rem; }
+    .price-card li::before { content: "✓"; position: absolute; left: 0; color: #5a8a78; font-weight: 600; }
+    .price-note { font-size: .85rem; color: #6b675f; margin-top: .5rem; }
+    .featured-pill { position: absolute; top: -.8rem; left: 50%; transform: translateX(-50%); background: #5a8a78; color: #fff; font-size: .72rem; letter-spacing: .1em; text-transform: uppercase; padding: .25rem .9rem; border-radius: 999px; font-weight: 600; }
+    .btn-plan { display: block; text-align: center; padding: .85rem; border-radius: 999px; font-weight: 500; text-decoration: none; }
+    .btn-plan.primary { background: #111; color: #f5f3ee; }
+    .btn-plan.secondary { border: 1px solid #111; color: #111; }
+    .pricing-faq { max-width: 40rem; margin: 0 auto; padding: 0 1.5rem 5rem; }
+    .pricing-faq h2 { font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 1.8rem; margin-bottom: 1.5rem; text-align: center; }
+    .pricing-faq details { border-bottom: 1px solid #e0ddd6; padding: 1rem 0; }
+    .pricing-faq summary { cursor: pointer; font-weight: 500; }
+    .pricing-faq details p { color: #6b675f; margin-top: .6rem; line-height: 1.65; }
+  </style>
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="site-header-inner">
+      <a class="brand-mark" href="index.html" aria-label="PodArticle home">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"/><polygon points="10,8 16,12 10,16" fill="currentColor" stroke="none"/>
+        </svg>
+        <span>PodArticle</span>
+      </a>
+      <nav class="site-nav" aria-label="Main navigation">
+        <a href="index.html#feed">Latest episodes</a>
+        <button class="theme-toggle" data-theme-toggle aria-label="Switch to dark mode"></button>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="pricing-hero">
+      <p class="eyebrow">Pricing</p>
+      <h1>Your first five podarticles are free.</h1>
+      <p>After that, one simple subscription unlocks unlimited episode maps — every podcast you paste, mapped and timestamped.</p>
+    </section>
+
+    <section class="pricing-grid">
+
+      <div class="price-card">
+        <p class="price-name">Free</p>
+        <p class="price-tag">$0</p>
+        <ul>
+          <li>5 full episode maps</li>
+          <li>Top 5 moments, ranked</li>
+          <li>Transcript-verified timestamps</li>
+          <li>Deep links into YouTube</li>
+        </ul>
+        <a class="btn-plan secondary" href="index.html">Start free</a>
+      </div>
+
+      <div class="price-card featured">
+        <span class="featured-pill">Best value</span>
+        <p class="price-name">Annual</p>
+        <p class="price-tag">$5<span>/month</span></p>
+        <ul>
+          <li>Unlimited episode maps</li>
+          <li>Top 5 moments, ranked</li>
+          <li>Transcript-verified timestamps</li>
+          <li>Deep links into YouTube</li>
+          <li>Billed $60 once a year</li>
+        </ul>
+        <a class="btn-plan primary" href="index.html">Go annual</a>
+      </div>
+
+      <div class="price-card">
+        <p class="price-name">Monthly</p>
+        <p class="price-tag">$10<span>/month</span></p>
+        <ul>
+          <li>Unlimited episode maps</li>
+          <li>Top 5 moments, ranked</li>
+          <li>Transcript-verified timestamps</li>
+          <li>Deep links into YouTube</li>
+          <li>Cancel anytime</li>
+        </ul>
+        <a class="btn-plan secondary" href="index.html">Go monthly</a>
+      </div>
+
+    </section>
+
+    <section class="pricing-faq">
+      <h2>Questions</h2>
+      <details>
+        <summary>What counts as one podarticle?</summary>
+        <p>One analysis of one episode. Paste a YouTube podcast link and the map it generates — Top 5 moments plus the full section-by-section breakdown — is a podarticle. Your first five are on us.</p>
+      </details>
+      <details>
+        <summary>Do episodes other people mapped count against my five?</summary>
+        <p>No. Browsing the public library is always free. Only new analyses you request count toward your free five.</p>
+      </details>
+      <details>
+        <summary>Can I cancel?</summary>
+        <p>Monthly plans cancel anytime and stay active through the end of the billing period. Annual plans are billed once and run for the year.</p>
+      </details>
+      <details>
+        <summary>Why does PodArticle exist?</summary>
+        <p>Because a three-hour podcast shouldn't require three hours. Every map links back into the creator's YouTube video, so creators keep the viewership and you keep your evening.</p>
+      </details>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap-wide footer-inner">
+      <a class="brand-mark" href="index.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"/><polygon points="10,8 16,12 10,16" fill="currentColor" stroke="none"/>
+        </svg>
+        <span>PodArticle</span>
+      </a>
+      <nav class="footer-links" aria-label="Footer">
+        <a href="pricing.html">Pricing</a>
+        <a href="#">For creators</a>
+        <a href="#">Contact</a>
+      </nav>
+      <p class="footer-copy">Made for people who love podcasts but don't have 90 minutes. &copy; 2026 PodArticle.</p>
+    </div>
+  </footer>
+
+  <script src="theme.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Episode — PodArticle</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="site-header-inner">
+      <a class="brand-mark" href="index.html" aria-label="PodArticle home">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"/><polygon points="10,8 16,12 10,16" fill="currentColor" stroke="none"/>
+        </svg>
+        <span>PodArticle</span>
+      </a>
+      <nav class="site-nav" aria-label="Main navigation">
+        <a href="index.html#feed">Latest episodes</a>
+        <button class="theme-toggle" data-theme-toggle aria-label="Switch to dark mode"></button>
+      </nav>
+    </div>
+  </header>
+
+  <main id="episode-root">
+    <div class="ep-loading" style="max-width:720px;margin:6rem auto;text-align:center;padding:0 1.5rem;">
+      <p style="font-family:'Instrument Serif',serif;font-size:1.5rem;font-style:italic;">Loading your episode map…</p>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap-wide footer-inner">
+      <a class="brand-mark" href="index.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"/><polygon points="10,8 16,12 10,16" fill="currentColor" stroke="none"/>
+        </svg>
+        <span>PodArticle</span>
+      </a>
+      <nav class="footer-links" aria-label="Footer">
+        <a href="index.html">About</a>
+        <a href="index.html">For creators</a>
+        <a href="index.html">Contact</a>
+      </nav>
+      <p class="footer-copy">Chapters sourced from the show's own YouTube description; descriptions checked against the spoken transcript. &copy; 2026 PodArticle.</p>
+    </div>
+  </footer>
+
+  <script src="theme.js" defer></script>
+  <script>
+  (function () {
+    var root = document.getElementById('episode-root');
+    var params = new URLSearchParams(window.location.search);
+    var vid = params.get('v');
+
+    if (!vid) {
+      root.innerHTML = '<div style="max-width:720px;margin:6rem auto;text-align:center;padding:0 1.5rem;">' +
+        '<h1 style="font-family:\'Instrument Serif\',serif;font-size:2rem;">No episode loaded</h1>' +
+        '<p style="margin:1rem 0 2rem;color:#6b675f;">Paste a YouTube link on the homepage to generate an episode map.</p>' +
+        '<a class="btn-primary" href="index.html">Back to PodArticle</a></div>';
+      return;
+    }
+
+    var attempts = 0;
+    function loadEpisode() {
+      attempts++;
+      fetch('__PORT_8000__/api/episode/' + encodeURIComponent(vid))
+        .then(function (r) {
+          if (!r.ok) throw new Error('Episode not found — run the analysis first.');
+          return r.json();
+        })
+        .then(function (data) { render(data); })
+        .catch(function (err) {
+          if (attempts < 4) {
+            setTimeout(loadEpisode, 3000);
+            return;
+          }
+          root.innerHTML = '<div style="max-width:720px;margin:6rem auto;text-align:center;padding:0 1.5rem;">' +
+            '<h1 style="font-family:\'Instrument Serif\',serif;font-size:2rem;">Something went wrong</h1>' +
+            '<p style="margin:1rem 0 2rem;color:#6b675f;">' + err.message + '</p>' +
+            '<a class="btn-primary" href="index.html">Back to PodArticle</a></div>';
+        });
+    }
+    loadEpisode();
+
+    function render(data) {
+
+    var meta = data.metadata || {};
+    var analysis = data.analysis;
+    var vid = data.video_id;
+    var ytBase = 'https://www.youtube.com/watch?v=' + vid;
+
+    function esc(s) {
+      var d = document.createElement('div');
+      d.textContent = s == null ? '' : String(s);
+      return d.innerHTML;
+    }
+    function yt(sec) { return ytBase + '&t=' + Math.floor(sec || 0) + 's'; }
+    function fmtTs(sec) {
+      sec = Math.floor(sec || 0);
+      var h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = sec % 60;
+      if (h > 0) return h + ':' + String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+      return m + ':' + String(s).padStart(2, '0');
+    }
+
+    var thumb = 'https://i.ytimg.com/vi/' + vid + '/maxresdefault.jpg';
+    var top5 = analysis.top5 || [];
+    var chapters = analysis.chapters || [];
+    var allVerified = top5.length > 0 && top5.every(function (t) { return t.verified !== false; });
+
+    document.title = (meta.title || 'Episode') + ' — PodArticle';
+
+    var html = '';
+
+    // Hero
+    html += '<a class="ep-hero" href="' + yt(0) + '" target="_blank" rel="noopener" aria-label="Watch original on YouTube">' +
+      '<img src="' + thumb + '" alt="' + esc(meta.title) + '" onerror="this.src=\'https://i.ytimg.com/vi/' + vid + '/hqdefault.jpg\'">' +
+      '<div class="ep-hero-play"><span class="ep-hero-play-btn">' +
+      '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="6,4 20,12 6,20"/></svg>' +
+      '</span></div></a>';
+
+    html += '<article class="ep-main">';
+    html += '<p class="ep-kicker">Episode map &middot; ' + esc(meta.author || 'YouTube') + '</p>';
+    html += '<h1 class="ep-title">' + esc(meta.title || 'Untitled episode') + '</h1>';
+    html += '<p class="ep-intro">' + esc(analysis.summary || '') + '</p>';
+
+    // Verified badge
+    if (allVerified && data.chapters_found > 0) {
+      html += '<div class="verified-badge">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg>' +
+        'Every timestamp below is matched to the show\'s own YouTube chapters and checked against the spoken transcript.</div>';
+    } else if (data.chapters_found === 0) {
+      html += '<div class="verified-badge" style="border-color:#c9a86a;color:#8a7a5a;">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>' +
+        'This video has no official chapters — timestamps are approximate, derived from the transcript.</div>';
+    }
+
+    // Top 5
+    if (top5.length) {
+      html += '<section aria-labelledby="top5-heading"><div class="top5-head">' +
+        '<p class="eyebrow">Top ' + top5.length + ' for this episode</p>' +
+        '<h2 id="top5-heading">If you only watch ' + (top5.length === 5 ? 'five' : top5.length) + ' moments</h2>' +
+        '<p>Ranked by what listeners tend to care about most — start anywhere, no scrubbing required.</p></div>' +
+        '<div class="top5-list">';
+      top5.forEach(function (t) {
+        html += '<a class="top5-card" href="' + yt(t.seconds) + '" target="_blank" rel="noopener">' +
+          '<span class="top5-rank">' + esc(t.rank) + '</span>' +
+          '<div class="top5-body"><div class="top5-top-row">' +
+          '<span class="top5-title">' + esc(t.title) + '</span>' +
+          '<span class="top5-time">' + esc(t.timestamp || fmtTs(t.seconds)) + '</span></div>' +
+          '<p class="top5-desc">' + esc(t.description) + '</p></div>' +
+          '<span class="top5-play"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="6,4 20,12 6,20"/></svg></span></a>';
+      });
+      html += '</div></section>';
+    }
+
+    // Full section map
+    if (chapters.length) {
+      html += '<section aria-labelledby="map-heading"><div class="map-head">' +
+        '<h2 id="map-heading">Full section map</h2></div>';
+      chapters.forEach(function (c, i) {
+        html += '<details class="chapter-group"' + (i === 0 ? ' open' : '') + '>' +
+          '<summary class="chapter-summary"><span class="chapter-summary-left">' +
+          '<span class="chapter-time">' + esc(c.timestamp || fmtTs(c.seconds)) + '</span>' +
+          '<span class="chapter-name">' + esc(c.title) + '</span></span>' +
+          '<svg class="chapter-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6,9 12,15 18,9"/></svg>' +
+          '</summary><div class="chapter-items"><div class="chapter-item">' +
+          '<a class="chapter-item-time" href="' + yt(c.seconds) + '" target="_blank" rel="noopener">' + esc(c.timestamp || fmtTs(c.seconds)) + '</a>' +
+          '<div class="chapter-item-text"><strong>' + esc(c.title) + '</strong><p>' + esc(c.description) + '</p></div>' +
+          '</div></div></details>';
+      });
+      html += '</section>';
+    }
+
+    // Bottom actions
+    html += '<div class="ep-bottom">' +
+      '<a class="btn-primary" href="' + yt(0) + '" target="_blank" rel="noopener">' +
+      '<svg class="btn-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="6,4 20,12 6,20"/></svg>' +
+      'Watch full episode</a>' +
+      '<a class="btn-secondary" href="index.html">' +
+      '<svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>' +
+      'Analyze another episode</a></div>';
+
+    html += '</article>';
+    root.innerHTML = html;
+    }
+  })();
+  </script>
+</body>
+</html>
