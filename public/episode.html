@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
+  <script src="thumb.js"></script>
 </head>
 <body>
 
@@ -192,7 +193,7 @@
       return m + ':' + String(s).padStart(2, '0');
     }
 
-    var thumb = 'https://i.ytimg.com/vi/' + vid + '/maxresdefault.jpg';
+    var thumb = window.PAThumb.url(vid);
     var top5 = analysis.top5 || [];
     var chapters = analysis.chapters || [];
     var allVerified = top5.length > 0 && top5.every(function (t) { return t.verified !== false; });
@@ -203,7 +204,7 @@
 
     // Hero
     html += '<a class="ep-hero" href="' + yt(0) + '" target="_blank" rel="noopener" aria-label="Watch original on YouTube">' +
-      '<img src="' + thumb + '" alt="' + esc(meta.title) + '" onerror="this.src=\'https://i.ytimg.com/vi/' + vid + '/hqdefault.jpg\'">' +
+      '<img src="' + thumb + '" alt="' + esc(meta.title) + '">' +
       '<div class="ep-hero-play"><span class="ep-hero-play-btn">' +
       '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="6,4 20,12 6,20"/></svg>' +
       '</span></div></a>';

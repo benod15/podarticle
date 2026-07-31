@@ -17,22 +17,6 @@
   var pendingSeek = null;
   var apiFailed = false;
 
-  // ---------- Thumbnail fallback ----------
-  // YouTube only generates maxresdefault.jpg for some uploads; hqdefault always exists.
-  // Capture phase, because resource error events do not bubble.
-  document.addEventListener(
-    'error',
-    function (e) {
-      var img = e.target;
-      if (!img || img.tagName !== 'IMG' || img.dataset.ytThumbFallback) return;
-      var m = /^https:\/\/i\.ytimg\.com\/vi\/([A-Za-z0-9_-]{11})\//.exec(img.src || '');
-      if (!m) return;
-      img.dataset.ytThumbFallback = '1';
-      img.src = 'https://i.ytimg.com/vi/' + m[1] + '/hqdefault.jpg';
-    },
-    true
-  );
-
   // ---------- Parsing ----------
   function videoFromHref(href) {
     var m = /[?&]v=([A-Za-z0-9_-]{11})/.exec(href) || /youtu\.be\/([A-Za-z0-9_-]{11})/.exec(href);
@@ -98,8 +82,8 @@
       '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="6,4 20,12 6,20"/></svg>' +
       '</span></span></button>';
 
-    var posterImg = shell.querySelector('img');
-    posterImg.src = img ? img.src : 'https://i.ytimg.com/vi/' + id + '/maxresdefault.jpg';
+    var posterImg = window.PAThumb.bind(shell.querySelector('img'));
+    posterImg.src = img ? img.src : window.PAThumb.url(id);
     posterImg.alt = img ? img.alt : '';
 
     shell.querySelector('[data-yt-poster]').addEventListener('click', function () { seek(0); });
