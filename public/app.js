@@ -168,7 +168,66 @@
     );
   }
 
-  const urlInput = form?.querySelector('input[type="url"]');
+  // Plain text, not type="url": an unrecognised paste should get our own plain-English
+  // "that does not look like a YouTube link" copy, not the browser's terse validation bubble.
+  const urlInput = form?.querySelector('[data-link-input]');
+
+  // ---------- Tidying pasted links ----------
+  // YouTube's "Copy link" hangs tracking on the end (?si=…, &feature=share, &pp=…), the
+  // mobile share sheet wraps the link in a sentence, and a link copied from a playlist
+  // carries someone else's list. All of that either breaks the URL field or muddies the
+  // request, so any link we recognise is reduced to the plain watch URL plus its start
+  // time. A link we do not recognise is left exactly as pasted — better to send it on and
+  // let the reader see the "that does not look like a YouTube link" copy than to mangle
+  // something that would have worked.
+  const YT_ID_RE =
+    /(?:youtube\.com\/(?:watch\?[^\s]*?\bv=|shorts\/|embed\/|live\/|v\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/;
+
+  function startSeconds(text) {
+    const m = /[?&#](?:t|start)=([0-9hms]+)/i.exec(text);
+    if (!m) return 0;
+    const raw = m[1];
+    if (/^\d+s?$/.test(raw)) return parseInt(raw, 10);
+    const h = /(\d+)h/i.exec(raw);
+    const mi = /(\d+)m/i.exec(raw);
+    const s = /(\d+)s/i.exec(raw);
+    return (h ? +h[1] * 3600 : 0) + (mi ? +mi[1] * 60 : 0) + (s ? +s[1] : 0);
+  }
+
+  function normalizeYouTubeUrl(raw) {
+    const text = String(raw || '').trim().replace(/^[<"']+|[>"']+$/g, '');
+    const m = YT_ID_RE.exec(text);
+    if (!m) return text;
+    const t = startSeconds(text);
+    return `https://www.youtube.com/watch?v=${m[1]}` + (t > 0 ? `&t=${t}s` : '');
+  }
+
+  const tipEl = document.querySelector('[data-link-tip]');
+  const defaultTip = tipEl?.innerHTML;
+
+  function resetTip() {
+    if (tipEl && tipEl.classList.contains('is-tidied')) {
+      tipEl.innerHTML = defaultTip;
+      tipEl.classList.remove('is-tidied');
+    }
+  }
+
+  // Rewrite the box in place so the reader can see exactly what we are about to analyze.
+  function tidyLinkInput() {
+    if (!urlInput) return;
+    const before = urlInput.value.trim();
+    const after = normalizeYouTubeUrl(before);
+    if (after === before) return;
+    urlInput.value = after;
+    if (tipEl) {
+      tipEl.textContent = 'We tidied that link up — the extra tracking bits are gone. Press Analyze when you are ready.';
+      tipEl.classList.add('is-tidied');
+    }
+  }
+
+  urlInput?.addEventListener('input', resetTip);
+  urlInput?.addEventListener('paste', () => setTimeout(tidyLinkInput, 0));
+  urlInput?.addEventListener('blur', tidyLinkInput);
 
   async function runAnalysis(url) {
     const btn = form?.querySelector('button[type="submit"]');
@@ -219,9 +278,17 @@
   if (form) {
     form.addEventListener('submit', (e) => {
       e.preventDefault();
+      tidyLinkInput();
       const url = (urlInput?.value || '').trim();
       if (!url) {
         failProgress('EMPTY_URL', true);
+        urlInput?.focus();
+        return;
+      }
+      // Nothing resembling a YouTube address: say so here rather than asking someone to
+      // sign in first, only to reject the link a moment later.
+      if (!/youtu/i.test(url)) {
+        failProgress('BAD_URL', true);
         urlInput?.focus();
         return;
       }

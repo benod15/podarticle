@@ -242,6 +242,9 @@ ul[role="list"] { list-style: none; }
 .link-form button svg { width: 15px; height: 15px; }
 .hero-note { font-size: 13px; color: var(--color-text-faint); }
 .hero-note strong { color: var(--color-text-muted); font-weight: 600; }
+.link-tip { max-width: 46ch; margin: 0 auto 10px; font-size: 13px; color: var(--color-text-faint); }
+.link-tip strong { color: var(--color-text-muted); font-weight: 600; }
+.link-tip.is-tidied { color: var(--color-primary-strong); }
 
 /* ---------- Analysis progress wheel ---------- */
 .analysis-progress { max-width: 560px; margin: 28px auto 0; text-align: left; }
@@ -434,6 +437,30 @@ ul[role="list"] { list-style: none; }
 }
 .ep-player.is-playing .ep-player-poster { display: none; }
 .ep-player-poster img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+/* Return trip out of the player, so nobody needs the browser back arrow. */
+.ep-back-to-sections {
+  position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); z-index: 40;
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--color-ink); color: var(--color-ink-inverse);
+  border: 0; cursor: pointer; font-family: inherit;
+  font-size: 13px; font-weight: 600; padding: 11px 20px; border-radius: var(--radius-full);
+  box-shadow: var(--shadow-lg);
+  transition: background var(--transition);
+}
+.ep-back-to-sections:hover { background: var(--color-primary-strong); }
+.ep-back-to-sections svg { width: 14px; height: 14px; }
+.ep-back-to-sections[hidden] { display: none; }
+
+/* Breadcrumb exit, at the top of episode and pricing pages. */
+.back-link {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 13px; font-weight: 500; color: var(--color-text-muted);
+  text-decoration: none; margin-bottom: 18px;
+  transition: color var(--transition);
+}
+.back-link:hover { color: var(--color-text); }
+.back-link svg { width: 14px; height: 14px; flex-shrink: 0; }
 
 .ep-main { max-width: 720px; margin: 0 auto; padding: 32px 20px 80px; }
 .ep-kicker { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-gold-strong); margin-bottom: 12px; }

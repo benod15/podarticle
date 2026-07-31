@@ -10,7 +10,8 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <style>
-    .pricing-hero { text-align: center; padding: 5rem 1.5rem 3rem; }
+    .pricing-back { max-width: 64rem; margin: 0 auto; padding: 2rem 1.5rem 0; }
+    .pricing-hero { text-align: center; padding: 2rem 1.5rem 3rem; }
     .pricing-hero h1 { font-family: 'Instrument Serif', serif; font-weight: 400; font-size: clamp(2.2rem, 5vw, 3.2rem); margin: .75rem 0 1rem; }
     .pricing-hero p { color: #6b675f; max-width: 34rem; margin: 0 auto; line-height: 1.7; }
     .pricing-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.5rem; max-width: 64rem; margin: 0 auto; padding: 2rem 1.5rem 5rem; }
@@ -57,6 +58,13 @@
   </header>
 
   <main>
+    <div class="pricing-back">
+      <a class="back-link" href="index.html" data-pricing-back>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        <span data-pricing-back-label>Back to PodArticle</span>
+      </a>
+    </div>
+
     <section class="pricing-hero">
       <p class="eyebrow">Pricing</p>
       <h1>Your first five podarticles are free.</h1>
@@ -153,6 +161,21 @@
   <script src="theme.js" defer></script>
   <script src="auth.js" defer></script>
   <script>
+  // Send the back link to whatever page sent the reader here — usually the episode whose
+  // paywall notice they tapped — so choosing a plan is never a one-way trip. Only
+  // same-origin referrers are trusted; anything else falls back to the homepage.
+  (function () {
+    var link = document.querySelector('[data-pricing-back]');
+    var label = document.querySelector('[data-pricing-back-label]');
+    if (!link || !document.referrer) return;
+    var from;
+    try { from = new URL(document.referrer); } catch (e) { return; }
+    if (from.origin !== window.location.origin) return;
+    if (from.pathname === window.location.pathname) return;
+    link.href = from.pathname + from.search + from.hash;
+    label.textContent = /episode/.test(from.pathname) ? 'Back to the episode' : 'Back to where you were';
+  })();
+
   // Show the subscriber's current plan and disable re-purchase.
   function whenAuthReady(cb, tries) {
     if (window.PAAuth) return cb();
