@@ -21,17 +21,29 @@ export default async function handler(req, res) {
     return res.status(422).json({ error: 'Unknown plan' });
   }
 
-  // Signed-in user's email links the Stripe customer to their Supabase account
-  const { user } = await getUser(req);
+  // An account is required before paying: the subscription is keyed to the Supabase user,
+  // so checking out signed-out would take someone's money and grant them nothing.
+  const { user, error: authError, status: authStatus, code: authCode } = await getUser(req);
+  if (authError) {
+    return res.status(authStatus).json({ error: 'Sign in with Google first so we can attach your subscription to your account.', code: authCode });
+  }
 
-  const stripe = new Stripe(key);
-  const base = `https://${req.headers.host}`;
-  const session = await stripe.checkout.sessions.create({
-    mode: 'subscription',
-    line_items: [{ price, quantity: 1 }],
-    customer_email: user?.email || undefined,
-    success_url: `${base}/?subscribed=1`,
-    cancel_url: `${base}/pricing.html`,
-  });
-  return res.status(200).json({ url: session.url });
+  try {
+    const stripe = new Stripe(key);
+    const base = `https://${req.headers.host}`;
+    const session = await stripe.checkout.sessions.create({
+      mode: 'subscription',
+      line_items: [{ price, quantity: 1 }],
+      customer_email: user.email || undefined,
+      success_url: `${base}/?subscribed=1`,
+      cancel_url: `${base}/pricing.html`,
+    });
+    return res.status(200).json({ url: session.url });
+  } catch (err) {
+    console.error('checkout failed', err);
+    return res.status(502).json({
+      error: 'We could not open checkout just now. Please try again, or email podarticle@gmail.com.',
+      code: 'CHECKOUT_FAILED',
+    });
+  }
 }

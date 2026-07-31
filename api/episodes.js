@@ -1,5 +1,10 @@
 // api/episodes.js — GET library index (for the Episode library section w/ sort + search)
-import { listEpisodes, getEpisodeBySlug } from '../lib/db.js';
+//
+// Hybrid library: `episodes` is the curated public seed everyone sees, and `mine` is the
+// signed-in reader's own analyses. A missing or invalid token is not an error here —
+// browsing the curated library never requires an account.
+import { listEpisodes, listUserEpisodes, getEpisodeBySlug } from '../lib/db.js';
+import { getUser } from '../lib/auth.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
@@ -25,17 +30,25 @@ export default async function handler(req, res) {
     });
   }
 
-  const episodes = await listEpisodes();
+  const toCard = (e) => ({
+    video_id: e.video_id,
+    slug: e.slug,
+    title: e.title,
+    show_name: e.show_name,
+    published_at: e.published_at,
+    duration_sec: e.duration_sec,
+    summary: e.analysis || '',
+    created_at: e.created_at,
+  });
+
+  const { user } = req.headers.authorization ? await getUser(req) : {};
+  const [episodes, mine] = await Promise.all([
+    listEpisodes(),
+    user ? listUserEpisodes(user.id) : Promise.resolve([]),
+  ]);
+
   return res.status(200).json({
-    episodes: episodes.map((e) => ({
-      video_id: e.video_id,
-      slug: e.slug,
-      title: e.title,
-      show_name: e.show_name,
-      published_at: e.published_at,
-      duration_sec: e.duration_sec,
-      summary: e.analysis || '',
-      created_at: e.created_at,
-    })),
+    episodes: episodes.map(toCard),
+    mine: mine.map(toCard),
   });
 }

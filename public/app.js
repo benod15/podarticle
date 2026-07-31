@@ -50,18 +50,37 @@
     if (progressBar) progressBar.style.width = pct + '%';
   }
 
-  // Swap the analyzer CTA for a Google sign-in prompt.
-  function showAuthPrompt() {
+  const SUPPORT_EMAIL = 'podarticle@gmail.com';
+
+  // Swap the analyzer CTA for a Google sign-in prompt, carrying the pasted link across
+  // the OAuth round trip so it is waiting in the box when the reader lands back here.
+  function showAuthPrompt(pendingUrl) {
     const slot = document.querySelector('[data-auth-prompt]');
     if (!slot || !window.PAAuth) return;
     slot.hidden = false;
-    slot.innerHTML = '';
+    slot.replaceChildren();
+
+    const note = document.createElement('p');
+    note.className = 'auth-prompt-note';
+    note.textContent = pendingUrl
+      ? 'We saved your link. Sign in with Google and we will pick up right where you left off — your first 5 are free.'
+      : 'Sign in with Google to map an episode. Your first 5 are free, and browsing the library never needs an account.';
+
     const btn = document.createElement('button');
     btn.className = 'auth-btn auth-btn-lg';
     btn.type = 'button';
-    btn.textContent = 'Continue with Google to analyze';
-    btn.addEventListener('click', () => window.PAAuth.signIn());
-    slot.appendChild(btn);
+    btn.textContent = 'Continue with Google';
+    btn.addEventListener('click', () => window.PAAuth.signIn({ pendingUrl }));
+
+    slot.append(note, btn);
+  }
+
+  function hideAuthPrompt() {
+    const slot = document.querySelector('[data-auth-prompt]');
+    if (slot) {
+      slot.hidden = true;
+      slot.replaceChildren();
+    }
   }
 
   function finishProgress() {
@@ -80,6 +99,12 @@
       errorEl.hidden = false;
     }
     if (progressBar) progressBar.classList.add('failed');
+  }
+
+  function hideProgress() {
+    clearTimers();
+    if (progress) progress.hidden = true;
+    if (errorEl) errorEl.hidden = true;
   }
 
   function startProgress() {
@@ -108,45 +133,76 @@
     );
   }
 
-  if (form) {
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const input = form.querySelector('input[type="url"]');
-      const url = (input?.value || '').trim();
-      if (!url) return;
-      const btn = form.querySelector('button[type="submit"]');
-      if (btn) btn.disabled = true;
-      startProgress();
-      try {
-        const session = await window.PAAuth?.getSession();
-        const headers = { 'Content-Type': 'application/json' };
-        if (session?.access_token) headers.Authorization = `Bearer ${session.access_token}`;
-        const r = await fetch('/api/analyze', {
-          method: 'POST',
-          headers,
-          body: JSON.stringify({ url }),
-        });
-        const data = await r.json().catch(() => ({}));
-        if (!r.ok) {
-          failProgress(data.error || 'Something went wrong analyzing that episode. Please try again.');
-          if (data.code === 'AUTH_REQUIRED') {
-            showAuthPrompt();
-          } else if (data.code === 'LIMIT_REACHED') {
-            setTimeout(() => { window.location.href = '/pricing.html'; }, 1800);
-          }
+  const urlInput = form?.querySelector('input[type="url"]');
+
+  async function runAnalysis(url) {
+    const btn = form?.querySelector('button[type="submit"]');
+    const session = await window.PAAuth?.getSession();
+
+    // Ask for sign-in before spending a minute on an analysis that will be rejected.
+    if (!session?.access_token) {
+      hideProgress();
+      showAuthPrompt(url);
+      return;
+    }
+
+    hideAuthPrompt();
+    if (btn) btn.disabled = true;
+    startProgress();
+    try {
+      const r = await fetch('/api/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({ url }),
+      });
+      // An edge error page is HTML, not JSON — never let the parse failure become the message.
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok || !data.analysis) {
+        if (data.code === 'AUTH_REQUIRED') {
+          hideProgress();
+          showAuthPrompt(url);
           return;
         }
-        finishProgress();
-        // Hand the result to the renderer directly — the slug page is only for
-        // library browsing (seed static pages); new analyses render dynamically.
-        try { sessionStorage.setItem('pa_result_' + data.video_id, JSON.stringify(data)); } catch {}
-        window.location.href = `/episode.html?v=${data.video_id}`;
-      } catch {
-        failProgress('Network error — check your connection and try again.');
-      } finally {
-        if (btn) btn.disabled = false;
+        if (data.code === 'LIMIT_REACHED') {
+          failProgress(data.error || "You've used your 5 free podarticles. Taking you to the plans…");
+          setTimeout(() => { window.location.href = '/pricing.html'; }, 1800);
+          return;
+        }
+        failProgress(
+          data.error ||
+            `Something went wrong mapping that episode. Please try again — if it keeps happening, email ${SUPPORT_EMAIL}.`
+        );
+        return;
       }
+      finishProgress();
+      // Hand the result to the renderer directly — the slug page is only for
+      // library browsing (seed static pages); new analyses render dynamically.
+      try { sessionStorage.setItem('pa_result_' + data.video_id, JSON.stringify(data)); } catch {}
+      window.location.href = `/episode.html?v=${data.video_id}`;
+    } catch {
+      failProgress('Network error — check your connection and try again.');
+    } finally {
+      if (btn) btn.disabled = false;
+    }
+  }
+
+  if (form) {
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const url = (urlInput?.value || '').trim();
+      if (url) runAnalysis(url);
     });
+
+    // Back from Google: put the saved link back in the box and, if sign-in worked,
+    // carry on without making anyone paste it a second time.
+    (async () => {
+      const pending = window.PAAuth?.takePendingUrl?.();
+      if (!pending) return;
+      if (urlInput) urlInput.value = pending;
+      const session = await window.PAAuth?.getSession();
+      if (session?.access_token) runAnalysis(pending);
+      else showAuthPrompt(pending);
+    })();
   }
 
   // ---------- Episode library: sort + search ----------
@@ -176,7 +232,9 @@
 
   function sortLibrary(items, mode) {
     const arr = items.slice();
-    if (mode === 'az') {
+    if (mode === 'mine') {
+      arr.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+    } else if (mode === 'az') {
       arr.sort((a, b) => a.show.localeCompare(b.show) || a.title.localeCompare(b.title));
     } else {
       // newest first; unknown dates (static seeds) go last
@@ -193,7 +251,7 @@
   function renderCard(item) {
     if (item.el) return item.el;
     const a = document.createElement('a');
-    a.className = 'article-card';
+    a.className = item.mine ? 'article-card is-mine' : 'article-card';
     // DB episodes have no static slug page — use the dynamic renderer.
     a.href = `/episode.html?v=${item.video_id}`;
     a.innerHTML = `
@@ -209,19 +267,29 @@
     a.querySelector('.article-card-eyebrow').textContent = item.show_name || '';
     a.querySelector('h3').textContent = item.title || '';
     a.querySelector('p').textContent = (item.summary || '').slice(0, 120);
+    if (item.mine) {
+      const badge = document.createElement('span');
+      badge.className = 'card-badge';
+      badge.textContent = 'Yours';
+      a.querySelector('.article-card-thumb').appendChild(badge);
+    }
     return a;
   }
 
   function render() {
     const q = searchInput?.value || '';
     const mode = sortSelect?.value || 'newest';
-    const visible = sortLibrary(library.filter((i) => matchesQuery(i, q)), mode);
+    const pool = mode === 'mine' ? library.filter((i) => i.mine) : library;
+    const visible = sortLibrary(pool.filter((i) => matchesQuery(i, q)), mode);
     grid.innerHTML = '';
     for (const item of visible) grid.appendChild(renderCard(item));
     if (!visible.length) {
       const p = document.createElement('p');
       p.className = 'library-empty';
-      p.textContent = 'No episodes match that search yet.';
+      p.textContent =
+        mode === 'mine'
+          ? 'Nothing here yet — paste a podcast link above and your episode maps will collect here.'
+          : 'No episodes match that search yet.';
       grid.appendChild(p);
     }
   }
@@ -229,19 +297,66 @@
   searchInput?.addEventListener('input', render);
   sortSelect?.addEventListener('change', render);
 
-  // Merge in the live library from the DB (dedupes against static seeds by video_id)
-  fetch('/api/episodes')
-    .then((r) => (r.ok ? r.json() : null))
-    .then((data) => {
-      if (!data?.episodes?.length) return;
-      const seen = new Set(library.map((i) => i.video_id));
-      for (const ep of data.episodes) {
-        if (seen.has(ep.video_id)) continue;
-        library.push({ ...ep, show: ep.show_name || '' });
+  // The "Your library" sort option exists only while the reader has personal maps.
+  function syncMineOption(hasMine) {
+    if (!sortSelect) return;
+    const opt = sortSelect.querySelector('option[value="mine"]');
+    if (hasMine && !opt) {
+      const el = document.createElement('option');
+      el.value = 'mine';
+      el.textContent = 'Your library';
+      sortSelect.appendChild(el);
+    } else if (!hasMine && opt) {
+      if (sortSelect.value === 'mine') sortSelect.value = 'newest';
+      opt.remove();
+    }
+  }
+
+  // The curated library merges with the reader's own analyses (dedup by video_id): the
+  // homepage stays the curated seed for everyone, personal maps sit on top for their owner.
+  // Rebuilt from the static seed each time so signing out drops the personal half.
+  async function loadLibrary() {
+    const session = await window.PAAuth?.getSession().catch(() => null);
+    const headers = session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {};
+    const r = await fetch('/api/episodes', { headers });
+    if (!r.ok) return;
+    const data = await r.json();
+
+    library = staticCards.slice();
+    const byId = new Map(library.map((i) => [i.video_id, i]));
+    const merge = (list, mine) => {
+      for (const ep of list || []) {
+        const existing = byId.get(ep.video_id);
+        if (existing) {
+          if (mine) existing.mine = true;
+          continue;
+        }
+        const item = { ...ep, show: ep.show_name || '', mine };
+        byId.set(ep.video_id, item);
+        library.push(item);
       }
-      render();
-    })
-    .catch(() => {/* DB not configured yet — static library still works */});
+    };
+    merge(data.episodes, false);
+    merge(data.mine, true);
+
+    syncMineOption(library.some((i) => i.mine));
+    render();
+  }
+
+  // DB not configured or unreachable — the curated static library still renders.
+  let loadedFor;
+  function refreshLibrary(session) {
+    const userId = session?.user?.id || null;
+    if (loadedFor === userId) return;
+    loadedFor = userId;
+    loadLibrary().catch(() => {});
+  }
+  if (window.PAAuth) {
+    window.PAAuth.getSession().then(refreshLibrary, () => refreshLibrary(null));
+    window.PAAuth.onAuthChange(refreshLibrary);
+  } else {
+    refreshLibrary(null);
+  }
 
   render();
 })();

@@ -14,10 +14,14 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { url } = req.body || {};
-  const videoId = extractVideoId(url);
+  // Vercel leaves the body as a string when the content-type header is missing.
+  let body = req.body || {};
+  if (typeof body === 'string') {
+    try { body = JSON.parse(body); } catch { body = {}; }
+  }
+  const videoId = extractVideoId(body.url);
   if (!videoId) {
-    return res.status(422).json({ error: 'Not a valid YouTube URL' });
+    return res.status(422).json({ error: "That doesn't look like a YouTube link. Paste the full video URL.", code: 'BAD_URL' });
   }
 
   // Library hit → instant return, open to everyone (browsing is free).
@@ -40,16 +44,21 @@ export default async function handler(req, res) {
     });
   }
 
+  // New analysis → sign-in required. Checked before anything else so a signed-out reader
+  // always gets the sign-in prompt rather than an infrastructure error.
+  const { user, error: authError, status: authStatus, code: authCode } = await getUser(req);
+  if (authError) {
+    return res.status(authStatus).json({ error: authError, code: authCode });
+  }
+
   const supadataKey = process.env.SUPADATA_API_KEY;
   const geminiKey = process.env.GEMINI_API_KEY;
   if (!supadataKey || !geminiKey) {
-    return res.status(500).json({ error: 'Server not configured (missing API keys)' });
-  }
-
-  // New analysis → sign-in required
-  const { user, error: authError, status: authStatus } = await getUser(req);
-  if (authError) {
-    return res.status(authStatus).json({ error: authError, code: 'AUTH_REQUIRED' });
+    console.error('analyze: missing SUPADATA_API_KEY or GEMINI_API_KEY');
+    return res.status(503).json({
+      error: 'Episode mapping is temporarily unavailable. Please try again shortly.',
+      code: 'UNAVAILABLE',
+    });
   }
 
   // Free-5 gate — new analyses only
@@ -80,7 +89,8 @@ export default async function handler(req, res) {
     // Count this analysis against the free allowance
     await recordUsage(user.id, videoId);
 
-    // Publish to the library
+    // Save to the analyzer's own library. Private by default — the public library is the
+    // curated seed only, so one user's analyses never spam everybody else's homepage.
     let slug = slugify(metadata.title);
     const saved = await saveEpisode({
       videoId,
@@ -91,6 +101,8 @@ export default async function handler(req, res) {
       durationSec: metadata.durationSec || null,
       transcriptLines: transcriptLines.length,
       analysis,
+      userId: user.id,
+      visibility: 'private',
     });
     if (saved?.slug) slug = saved.slug;
 
@@ -113,7 +125,11 @@ export default async function handler(req, res) {
     if (err instanceof TranscriptUnavailable || err.code === 'NO_TRANSCRIPT') {
       return res.status(422).json({ error: err.message, code: 'NO_TRANSCRIPT' });
     }
+    // Upstream messages can carry provider internals — log them, show the reader plain copy.
     console.error('analyze failed', err);
-    return res.status(err.status || 500).json({ error: err.message || 'Analysis failed' });
+    return res.status(500).json({
+      error: 'We hit a snag mapping that episode. Please try again in a moment.',
+      code: 'ANALYSIS_FAILED',
+    });
   }
 }

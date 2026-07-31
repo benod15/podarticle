@@ -167,6 +167,12 @@ ul[role="list"] { list-style: none; }
 }
 .auth-btn-lg:hover { background: var(--color-text-muted); color: var(--color-surface); }
 .auth-prompt { margin-top: 1rem; }
+.auth-prompt-note {
+  font-size: 14px; color: var(--color-text-muted); line-height: 1.6;
+  max-width: 34rem; margin: 0 auto .9rem;
+}
+
+.plan-notice { font-size: 13px; color: var(--color-text-muted); line-height: 1.5; margin-top: .75rem; }
 
 .plan-badge {
   display: inline-flex; align-items: center;
@@ -353,6 +359,13 @@ ul[role="list"] { list-style: none; }
   position: absolute; bottom: 8px; right: 8px; background: rgba(17,17,17,0.78); color: #fff;
   font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 4px;
 }
+.card-badge {
+  position: absolute; top: 8px; left: 8px;
+  background: var(--color-primary-strong); color: #fff;
+  font-size: 10.5px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase;
+  padding: 3px 8px; border-radius: var(--radius-full);
+}
+.article-card.is-mine { border-color: var(--color-primary-strong); }
 .article-card-body { padding: 18px 18px 20px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
 .article-card-eyebrow { font-size: 11px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: var(--color-primary-strong); }
 .article-card h3 {
@@ -391,6 +404,20 @@ ul[role="list"] { list-style: none; }
 }
 .ep-hero-play-btn:hover { transform: scale(1.06); }
 .ep-hero-play-btn svg { width: 22px; height: 22px; color: var(--color-ink); margin-left: 3px; }
+
+/* In-page player: poster until first play, then the YouTube iframe every timestamp seeks. */
+.ep-player {
+  position: relative; width: 100%; aspect-ratio: 16/9;
+  background: #000; overflow: hidden;
+}
+.ep-player-frame { position: absolute; inset: 0; }
+.ep-player-frame iframe { width: 100%; height: 100%; border: 0; display: block; }
+.ep-player-poster {
+  position: absolute; inset: 0; padding: 0; border: 0; cursor: pointer;
+  background: var(--color-surface-offset); display: block; width: 100%;
+}
+.ep-player.is-playing .ep-player-poster { display: none; }
+.ep-player-poster img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
 .ep-main { max-width: 720px; margin: 0 auto; padding: 32px 20px 80px; }
 .ep-kicker { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-gold-strong); margin-bottom: 12px; }
@@ -446,6 +473,15 @@ ul[role="list"] { list-style: none; }
 /* Full section map */
 .map-head { margin-bottom: 20px; }
 .map-head h2 { font-family: var(--font-display); font-weight: 400; font-size: 1.4rem; color: var(--color-ink); }
+.map-head p { font-size: 14px; color: var(--color-text-muted); margin-top: 6px; }
+
+/* Friendly empty / error states — the only thing a reader should ever see on failure. */
+.ep-notice { max-width: 40rem; margin: 6rem auto; text-align: center; padding: 0 1.5rem; }
+.ep-notice h1 { font-family: var(--font-display); font-weight: 400; font-size: 2rem; color: var(--color-ink); }
+.ep-notice p { margin-top: 1rem; color: var(--color-text-muted); line-height: 1.6; }
+.ep-notice-actions { display: flex; gap: .75rem; justify-content: center; flex-wrap: wrap; margin: 2rem 0 0; }
+.ep-notice-help { font-size: 13px; color: var(--color-text-faint); margin-top: 1.75rem; }
+.ep-notice-help a { color: inherit; }
 
 .chapter-group { margin-bottom: 8px; border: 1px solid var(--color-border); border-radius: var(--radius-lg); overflow: hidden; background: var(--color-surface-2); margin-bottom: 14px; }
 .chapter-summary {

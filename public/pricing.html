@@ -141,8 +141,8 @@
       </a>
       <nav class="footer-links" aria-label="Footer">
         <a href="pricing.html">Pricing</a>
-        <a href="#">For creators</a>
-        <a href="#">Contact</a>
+        <a href="mailto:podarticle@gmail.com?subject=PodArticle%20for%20creators">For creators</a>
+        <a href="mailto:podarticle@gmail.com">Contact</a>
       </nav>
       <p class="footer-copy">Made for people who love podcasts but don't have 90 minutes. &copy; 2026 PodArticle.</p>
     </div>
@@ -189,35 +189,64 @@
             method: 'POST',
             headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + session.access_token }
           });
-          const d = await r.json();
+          const d = await r.json().catch(function () { return {}; });
           if (d.url) window.location.href = d.url;
-          else { this.textContent = d.error || 'Something went wrong'; }
+          else { this.textContent = d.error || 'Could not open the portal — email podarticle@gmail.com and we will sort it out.'; }
         });
       }
     } catch {}
   })();
 
+  // Inline, plain-English feedback under the plan button — never a raw error in an alert.
+  function planNotice(btn, text) {
+    let el = btn.parentElement.querySelector('.plan-notice');
+    if (!el) {
+      el = document.createElement('p');
+      el.className = 'plan-notice';
+      btn.after(el);
+    }
+    el.textContent = text;
+    return el;
+  }
+
   document.querySelectorAll('[data-plan]').forEach(function (btn) {
     btn.addEventListener('click', async function () {
-      btn.disabled = true;
       const original = btn.textContent;
+      btn.disabled = true;
       btn.textContent = 'Redirecting to checkout…';
-      try {
-        const session = await window.PAAuth?.getSession();
-        const headers = { 'Content-Type': 'application/json' };
-        if (session?.access_token) headers.Authorization = `Bearer ${session.access_token}`;
-        const r = await fetch('/api/checkout', {
-          method: 'POST',
-          headers,
-          body: JSON.stringify({ plan: btn.dataset.plan })
-        });
-        const data = await r.json();
-        if (!r.ok || !data.url) throw new Error(data.error || 'Checkout failed');
-        window.location.href = data.url;
-      } catch (err) {
+
+      const restore = function (message) {
         btn.textContent = original;
         btn.disabled = false;
-        alert(err.message || 'Something went wrong — please try again.');
+        planNotice(btn, message);
+      };
+
+      try {
+        const session = await window.PAAuth?.getSession();
+        if (!session?.access_token) {
+          restore('Sign in with Google first so we can attach your subscription to your account.');
+          if (window.PAAuth) window.PAAuth.signIn();
+          return;
+        }
+        const r = await fetch('/api/checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + session.access_token },
+          body: JSON.stringify({ plan: btn.dataset.plan })
+        });
+        // A proxy error page is HTML, not JSON — do not let the parse failure surface.
+        const data = await r.json().catch(function () { return {}; });
+        if (!r.ok || !data.url) {
+          if (data.code === 'AUTH_REQUIRED') {
+            restore(data.error);
+            if (window.PAAuth) window.PAAuth.signIn();
+            return;
+          }
+          restore(data.error || 'We could not open checkout just now. Please try again, or email podarticle@gmail.com.');
+          return;
+        }
+        window.location.href = data.url;
+      } catch {
+        restore('Network error — check your connection and try again.');
       }
     });
   });
