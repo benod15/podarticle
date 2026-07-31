@@ -9,7 +9,8 @@ Turns YouTube podcast episodes into podarticles: section-by-section maps with tr
   - `analyze.js` — POST `{url}` → metadata (Supadata) → transcript (Supadata, full caption track) → section map (Gemini, user's key) → save to library (Supabase)
   - `episodes.js` — GET library index / single episode by slug
   - `sitemap.js` — sitemap regenerated from the library on every request
-- `lib/` — shared modules (youtube.js, gemini.js, db.js)
+- `lib/` — shared modules (youtube.js, gemini.js, db.js, auth.js)
+- `docs/brand-ops.md` — custom auth domain + support mailbox setup (DNS/dashboard work)
 
 ## Environment variables
 
@@ -20,7 +21,19 @@ Copy `.env.example` → set in the Vercel dashboard. Never commit real keys.
 | `GEMINI_API_KEY` | aistudio.google.com → Get API key |
 | `SUPADATA_API_KEY` | dash.supadata.ai → API keys (free: 100 credits/mo) |
 | `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` / `SUPABASE_ANON_KEY` | Supabase project → Settings → API |
-| `STRIPE_*` | dashboard.stripe.com (paywall lands in a later step) |
+| `PAYWALL_ENABLED` | leave unset/`false` — PodArticle is free for everyone right now |
+| `STRIPE_*` | dashboard.stripe.com (only read when the paywall is switched on) |
+
+## Free mode
+
+PodArticle is free and uncapped while we grow the first regular users. `checkAllowance`
+in `lib/auth.js` returns `allowed` unconditionally unless `PAYWALL_ENABLED=true`, so
+`/api/analyze` never returns `LIMIT_REACHED` — the limit is off server-side, not just
+hidden in the UI.
+
+The free-5 gate, the pricing page and the Stripe endpoints all stay in the repo. To
+re-arm the paywall: set `PAYWALL_ENABLED=true`, fill in the `STRIPE_*` vars, and
+un-pause the plan buttons in `public/pricing.html`.
 
 ## Supabase schema
 

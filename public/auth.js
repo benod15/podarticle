@@ -1,6 +1,19 @@
 // public/auth.js — Google sign-in via Supabase, shared by every page.
 // Exposes window.PAAuth = { client, getSession, signIn, signOut, onAuthChange }.
 (function () {
+  // The one place the Supabase endpoint is named. Everything else — sign-in, the OAuth
+  // round trip, the `plans` lookups — goes through the client built from it.
+  //
+  // Google's consent screen shows this host to the reader, so the custom domain
+  // api.podarticle.com is what we want here rather than the generated project ref.
+  // Switching over is this single line, but only after the custom domain is live in the
+  // Supabase dashboard and Google has the new callback — flipping it early breaks
+  // sign-in site-wide. Steps: docs/brand-ops.md.
+  //
+  //   const SUPABASE_URL = 'https://api.podarticle.com';
+  //
+  // The anon key is unchanged by the custom domain, and Supabase keeps serving the
+  // original *.supabase.co host afterwards, so the switch is reversible.
   const SUPABASE_URL = 'https://agmajezadtqkrnuwlmyk.supabase.co';
   const SUPABASE_ANON_KEY = 'sb_publishable_eZBBoI-WqjJV0pGwBPVjSw_0V1fGKyn';
 

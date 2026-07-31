@@ -37,8 +37,11 @@
     .pricing-faq details { border-bottom: 1px solid #e0ddd6; padding: 1rem 0; }
     .pricing-faq summary { cursor: pointer; font-weight: 500; }
     .pricing-faq details p { color: #6b675f; margin-top: .6rem; line-height: 1.65; }
-    .pricing-paused { max-width: 40rem; margin: 0 auto; padding: 1rem 1.25rem; border: 1px solid #5a8a78; border-radius: 1rem; background: rgba(90, 138, 120, .08); text-align: center; line-height: 1.65; }
-    .pricing-paused strong { display: block; margin-bottom: .25rem; }
+    /* Scoped to the hero so it outranks `.pricing-hero p`, which sets its own width and colour.
+       Unlike the cards below, this notice sits directly on the page background, so it takes
+       its colours from the theme variables rather than the light-mode literals used above. */
+    .pricing-hero .pricing-paused { max-width: 38rem; margin: 0 auto; padding: 1.1rem 1.35rem; border: 1px solid var(--color-primary); border-radius: var(--radius-lg); background: var(--color-primary-highlight); color: var(--color-text); text-align: center; line-height: 1.7; }
+    .pricing-hero .pricing-paused strong { display: block; margin-bottom: .35rem; color: var(--color-primary-strong); }
     .price-card.paused { opacity: .72; }
   </style>
 </head>
