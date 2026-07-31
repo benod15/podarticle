@@ -12,7 +12,7 @@
   var COPY = {
     AUTH_REQUIRED: {
       title: 'Sign in to map an episode',
-      body: 'Mapping a new episode needs a free account so your podarticles are saved and waiting next time. Sign in with Google — your first 5 maps are free, and reading the library never needs an account.',
+      body: 'Mapping a new episode needs a free account so your podarticles are saved and waiting next time. Sign in with Google — mapping is free and unlimited right now, and reading the library never needs an account.',
       action: { type: 'signin' },
     },
     // Same AUTH_REQUIRED code from the API, but on the pricing page the reason is money,
@@ -30,6 +30,8 @@
       body: 'This one is on us, not you — nothing is wrong with your account. Wait a minute and try signing in again.',
       support: true,
     },
+    // Dormant while PodArticle is free — the API only returns this code when the paywall
+    // is switched back on (PAYWALL_ENABLED in lib/auth.js).
     LIMIT_REACHED: {
       title: 'You have used your 5 free podarticles',
       body: 'Everything already in the library stays free to read, forever. To keep mapping new episodes, pick a plan: $5 a month billed yearly, or $10 month to month. Cancel whenever you like.',
@@ -70,7 +72,7 @@
     },
     PAYMENTS_UNAVAILABLE: {
       title: 'Subscriptions are not switched on yet',
-      body: 'Your 5 free podarticles still work in the meantime. Email us and we will tell you the moment plans go live.',
+      body: 'Nothing is lost — PodArticle is free right now, so keep mapping as many episodes as you like. Email us and we will tell you the moment plans go live.',
       support: true,
     },
     BAD_PLAN: {

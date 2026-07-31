@@ -62,7 +62,8 @@ export default async function handler(req, res) {
     return res.status(503).json({ error: 'Analysis provider keys missing', code: 'UNAVAILABLE' });
   }
 
-  // Free-5 gate — new analyses only
+  // Allowance gate — new analyses only. Open to every signed-in reader unless the
+  // paywall is switched back on (see PAYWALL_ENABLED in lib/auth.js).
   const allowance = await checkAllowance(user.id);
   if (!allowance.allowed) {
     return res.status(402).json({
@@ -87,7 +88,6 @@ export default async function handler(req, res) {
       apiKey: geminiKey,
     });
 
-    // Count this analysis against the free allowance
     await recordUsage(user.id, videoId);
 
     // Save to the analyzer's own library. Private by default — the public library is the

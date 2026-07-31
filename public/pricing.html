@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Pricing — PodArticle</title>
-  <meta name="description" content="Your first 5 podarticles are free. Then $5/month billed annually, or $10 month-to-month, for unlimited episode maps.">
+  <meta name="description" content="PodArticle is free while we grow — unlimited episode maps, no card needed. Paid plans are paused; here is what they will look like when they return.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
@@ -37,6 +37,9 @@
     .pricing-faq details { border-bottom: 1px solid #e0ddd6; padding: 1rem 0; }
     .pricing-faq summary { cursor: pointer; font-weight: 500; }
     .pricing-faq details p { color: #6b675f; margin-top: .6rem; line-height: 1.65; }
+    .pricing-paused { max-width: 40rem; margin: 0 auto; padding: 1rem 1.25rem; border: 1px solid #5a8a78; border-radius: 1rem; background: rgba(90, 138, 120, .08); text-align: center; line-height: 1.65; }
+    .pricing-paused strong { display: block; margin-bottom: .25rem; }
+    .price-card.paused { opacity: .72; }
   </style>
 </head>
 <body>
@@ -67,27 +70,32 @@
 
     <section class="pricing-hero">
       <p class="eyebrow">Pricing</p>
-      <h1>Your first five podarticles are free.</h1>
-      <p>After that, one simple subscription unlocks unlimited episode maps — every podcast you paste, mapped and timestamped.</p>
+      <h1>PodArticle is free right now.</h1>
+      <p class="pricing-paused">
+        <strong>Paid plans are paused.</strong>
+        Sign in with Google and map as many episodes as you like — no cap, no card, nothing to cancel.
+        The plans below are what we expect to charge once PodArticle is out of its early days, kept here so the price is never a surprise.
+      </p>
     </section>
 
     <section class="pricing-grid">
 
-      <div class="price-card">
+      <div class="price-card featured">
+        <span class="featured-pill">Available now</span>
         <p class="price-name">Free</p>
         <p class="price-tag">$0</p>
         <ul>
-          <li>5 full episode maps</li>
+          <li>Unlimited episode maps</li>
           <li>Top 5 moments, ranked</li>
           <li>Transcript-verified timestamps</li>
           <li>Deep links into YouTube</li>
+          <li>No card, no subscription</li>
         </ul>
-        <a class="btn-plan secondary" href="index.html">Start free</a>
+        <a class="btn-plan primary" href="index.html">Map an episode</a>
       </div>
 
-      <div class="price-card featured">
-        <span class="featured-pill">Best value</span>
-        <p class="price-name">Annual</p>
+      <div class="price-card paused">
+        <p class="price-name">Annual · later</p>
         <p class="price-tag">$5<span>/month</span></p>
         <ul>
           <li>Unlimited episode maps</li>
@@ -96,11 +104,11 @@
           <li>Deep links into YouTube</li>
           <li>Billed $60 once a year</li>
         </ul>
-        <button class="btn-plan primary" data-plan="annual" type="button">Go annual</button>
+        <button class="btn-plan secondary" data-plan="annual" type="button" disabled>Paused — free for now</button>
       </div>
 
-      <div class="price-card">
-        <p class="price-name">Monthly</p>
+      <div class="price-card paused">
+        <p class="price-name">Monthly · later</p>
         <p class="price-tag">$10<span>/month</span></p>
         <ul>
           <li>Unlimited episode maps</li>
@@ -109,7 +117,7 @@
           <li>Deep links into YouTube</li>
           <li>Cancel anytime</li>
         </ul>
-        <button class="btn-plan secondary" data-plan="monthly" type="button">Go monthly</button>
+        <button class="btn-plan secondary" data-plan="monthly" type="button" disabled>Paused — free for now</button>
       </div>
 
     </section>
@@ -117,16 +125,20 @@
     <section class="pricing-faq">
       <h2>Questions</h2>
       <details>
+        <summary>What does it cost today?</summary>
+        <p>Nothing. Every part of PodArticle is free at the moment — mapping episodes, reading the library, all of it. There is no card to enter and no trial that quietly ends.</p>
+      </details>
+      <details>
         <summary>What counts as one podarticle?</summary>
-        <p>One analysis of one episode. Paste a YouTube podcast link and the map it generates — Top 5 moments plus the full section-by-section breakdown — is a podarticle. Your first five are on us.</p>
+        <p>One analysis of one episode. Paste a YouTube podcast link and the map it generates — Top 5 moments plus the full section-by-section breakdown — is a podarticle. There is no limit on how many you can make.</p>
       </details>
       <details>
-        <summary>Do episodes other people mapped count against my five?</summary>
-        <p>No. Browsing the public library is always free. Only new analyses you request count toward your free five.</p>
+        <summary>When will you start charging?</summary>
+        <p>Not for a while, and never without warning. We would rather have PodArticle in more hands than earn from it early. If plans do come back, the prices above are what we expect them to be, and anyone already using the site will hear from us first.</p>
       </details>
       <details>
-        <summary>Can I cancel?</summary>
-        <p>Monthly plans cancel anytime and stay active through the end of the billing period. Annual plans are billed once and run for the year. Manage or cancel your subscription from the "Manage your subscription" link above (visible when you're subscribed), and we'll email you a portal link after checkout too.</p>
+        <summary>I subscribed earlier — what happens to my plan?</summary>
+        <p>Nothing changes for you, and you are not being charged for something everyone else gets free. Email us and we'll cancel and refund the remainder of your term. You can also manage the subscription from the "Manage your subscription" link above.</p>
       </details>
       <details>
         <summary>How do I contact support?</summary>
@@ -161,9 +173,9 @@
   <script src="theme.js" defer></script>
   <script src="auth.js" defer></script>
   <script>
-  // Send the back link to whatever page sent the reader here — usually the episode whose
-  // paywall notice they tapped — so choosing a plan is never a one-way trip. Only
-  // same-origin referrers are trusted; anything else falls back to the homepage.
+  // Send the back link to whatever page sent the reader here, so a detour to pricing is
+  // never a one-way trip. Only same-origin referrers are trusted; anything else falls
+  // back to the homepage.
   (function () {
     var link = document.querySelector('[data-pricing-back]');
     var label = document.querySelector('[data-pricing-back-label]');
