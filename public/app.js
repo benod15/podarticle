@@ -291,14 +291,14 @@
     a.href = `/episode.html?v=${item.video_id}`;
     a.innerHTML = `
       <div class="article-card-thumb">
-        <img src="https://i.ytimg.com/vi/${item.video_id}/maxresdefault.jpg" alt="" loading="lazy">
+        <img src="${window.PAThumb.url(item.video_id)}" alt="" loading="lazy">
       </div>
       <div class="article-card-body">
         <span class="article-card-eyebrow"></span>
         <h3></h3>
         <p></p>
       </div>`;
-    a.querySelector('img').alt = item.title;
+    window.PAThumb.bind(a.querySelector('img')).alt = item.title;
     a.querySelector('.article-card-eyebrow').textContent = item.show_name || '';
     a.querySelector('h3').textContent = item.title || '';
     a.querySelector('p').textContent = (item.summary || '').slice(0, 120);
