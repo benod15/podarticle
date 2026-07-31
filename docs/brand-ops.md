@@ -25,7 +25,21 @@ Reference values used throughout:
 Custom domains are a Supabase Pro feature and are billed as an add-on (about $10/month
 per domain). The project is already on Pro.
 
-### 1a. Start the domain in Supabase
+**Status:** the domain is active in Supabase and the code is flipped. The one step still
+outstanding is **1d** — adding the new callback URI in Google. Until that is done, Google
+sign-in will fail once this deploys.
+
+| Step | State |
+| --- | --- |
+| 1a Start the domain in Supabase | done |
+| 1b Add the DNS records on Vercel | done |
+| 1c Verify | done — domain shows active/green |
+| 1d Point Google OAuth at the new callback | **outstanding — do before merging** |
+| 1e Check the Supabase redirect allow-list | unchanged by the custom domain |
+| 1f Flip the code | done |
+| 1g Confirm, then clean up | after deploy |
+
+### 1a. Start the domain in Supabase — done
 
 Dashboard → project `agmajezadtqkrnuwlmyk` → **Settings → General → Custom Domains** →
 enter `api.podarticle.com` and start verification.
@@ -36,7 +50,7 @@ Supabase gives back two things to create in DNS:
 - one or more `TXT` records proving ownership (the exact names and values are generated
   per project — copy them from the dashboard, they are not guessable)
 
-### 1b. Add the DNS records on Vercel
+### 1b. Add the DNS records on Vercel — done
 
 Vercel dashboard → **Domains → podarticle.com → DNS**. Add exactly what Supabase showed:
 
@@ -47,7 +61,7 @@ Vercel dashboard → **Domains → podarticle.com → DNS**. Add exactly what Su
 
 Leave the TTL at the default. Do not proxy or redirect `api` anywhere else.
 
-### 1c. Verify
+### 1c. Verify — done
 
 Back in Supabase, press **Verify**. It can take anywhere from a few minutes to a couple of
 hours for DNS to propagate; re-press rather than re-creating the records.
@@ -62,7 +76,11 @@ curl -sI https://api.podarticle.com/auth/v1/health
 Do not continue until the `curl` returns a certificate that is valid for
 `api.podarticle.com` and a 200.
 
-### 1d. Point Google OAuth at the new callback
+### 1d. Point Google OAuth at the new callback — outstanding
+
+This is the remaining blocker. The code in `public/auth.js` now sends readers to
+`api.podarticle.com`, so Google must recognise that host's callback or every sign-in
+fails with `redirect_uri_mismatch`.
 
 Google Cloud Console → **APIs & Services → Credentials** → the OAuth 2.0 Client ID that
 PodArticle uses → **Authorized redirect URIs**.
@@ -91,15 +109,22 @@ Sign-in sends the reader back to the exact page they started on
 (`redirectTo: window.location.href` in `public/auth.js`), so the wildcard matters —
 without it, signing in from `/episode.html?v=…` fails while the homepage works.
 
-### 1f. Flip the code
+### 1f. Flip the code — done
 
-In `public/auth.js`, one line:
+`public/auth.js` now reads:
 
 ```js
 const SUPABASE_URL = 'https://api.podarticle.com';
 ```
 
-The anon key does not change. Open a PR, merge, let it deploy.
+The anon key does not change.
+
+That is the only browser-side reference. The server (`lib/auth.js`, `lib/db.js`,
+`api/portal.js`, `api/stripe-webhook.js`) reads `process.env.SUPABASE_URL` and hardcodes
+nothing, so it needs no code change. The `SUPABASE_URL` env var on Vercel can stay on
+`agmajezadtqkrnuwlmyk.supabase.co` or move to `api.podarticle.com` — Supabase serves both
+hosts and the service-role key is valid for either. Staying put is the smaller change; the
+custom domain matters only where a reader can see the host.
 
 ### 1g. Confirm, then clean up
 
