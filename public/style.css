@@ -244,7 +244,6 @@ ul[role="list"] { list-style: none; }
 .hero-note strong { color: var(--color-text-muted); font-weight: 600; }
 .link-tip { max-width: 46ch; margin: 0 auto 10px; font-size: 13px; color: var(--color-text-faint); }
 .link-tip strong { color: var(--color-text-muted); font-weight: 600; }
-.link-tip.is-tidied { color: var(--color-primary-strong); }
 
 /* ---------- Analysis progress wheel ---------- */
 .analysis-progress { max-width: 560px; margin: 28px auto 0; text-align: left; }

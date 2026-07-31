@@ -202,16 +202,6 @@
     return `https://www.youtube.com/watch?v=${m[1]}` + (t > 0 ? `&t=${t}s` : '');
   }
 
-  const tipEl = document.querySelector('[data-link-tip]');
-  const defaultTip = tipEl?.innerHTML;
-
-  function resetTip() {
-    if (tipEl && tipEl.classList.contains('is-tidied')) {
-      tipEl.innerHTML = defaultTip;
-      tipEl.classList.remove('is-tidied');
-    }
-  }
-
   // Rewrite the box in place so the reader can see exactly what we are about to analyze.
   function tidyLinkInput() {
     if (!urlInput) return;
@@ -219,13 +209,8 @@
     const after = normalizeYouTubeUrl(before);
     if (after === before) return;
     urlInput.value = after;
-    if (tipEl) {
-      tipEl.textContent = 'We tidied that link up — the extra tracking bits are gone. Press Analyze when you are ready.';
-      tipEl.classList.add('is-tidied');
-    }
   }
 
-  urlInput?.addEventListener('input', resetTip);
   urlInput?.addEventListener('paste', () => setTimeout(tidyLinkInput, 0));
   urlInput?.addEventListener('blur', tidyLinkInput);
 
