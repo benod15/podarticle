@@ -335,10 +335,28 @@
     return arr;
   }
 
+  // Seed cards are DOM nodes reused across renders, so ownership has to come back off
+  // again when the reader signs out — not just go on when they sign in.
+  function markMine(card, mine) {
+    card.classList.toggle('is-mine', !!mine);
+    const badge = card.querySelector('.card-badge');
+    if (mine && !badge) {
+      const el = document.createElement('span');
+      el.className = 'card-badge';
+      el.textContent = 'Yours';
+      card.querySelector('.article-card-thumb').appendChild(el);
+    } else if (!mine && badge) {
+      badge.remove();
+    }
+  }
+
   function renderCard(item) {
-    if (item.el) return item.el;
+    if (item.el) {
+      markMine(item.el, item.mine);
+      return item.el;
+    }
     const a = document.createElement('a');
-    a.className = item.mine ? 'article-card is-mine' : 'article-card';
+    a.className = 'article-card';
     // DB episodes have no static slug page — use the dynamic renderer.
     a.href = `/episode.html?v=${item.video_id}`;
     a.innerHTML = `
@@ -354,12 +372,7 @@
     a.querySelector('.article-card-eyebrow').textContent = item.show_name || '';
     a.querySelector('h3').textContent = item.title || '';
     a.querySelector('p').textContent = (item.summary || '').slice(0, 120);
-    if (item.mine) {
-      const badge = document.createElement('span');
-      badge.className = 'card-badge';
-      badge.textContent = 'Yours';
-      a.querySelector('.article-card-thumb').appendChild(badge);
-    }
+    markMine(a, item.mine);
     return a;
   }
 
