@@ -76,8 +76,10 @@
     var img = hero.querySelector('img');
     var shell = document.createElement('div');
     shell.className = 'ep-player';
+    // The API replaces its target element with the iframe, so it gets a disposable child
+    // rather than .ep-player-frame itself — the frame keeps stretching the iframe to 16:9.
     shell.innerHTML =
-      '<div class="ep-player-frame" data-yt-frame></div>' +
+      '<div class="ep-player-frame"><div data-yt-frame></div></div>' +
       '<button type="button" class="ep-player-poster" data-yt-poster aria-label="Play episode">' +
       '<img alt="" loading="lazy">' +
       '<span class="ep-hero-play"><span class="ep-hero-play-btn">' +
@@ -104,6 +106,8 @@
       function (YT) {
         player = new YT.Player(frame, {
           videoId: videoId,
+          width: '100%',
+          height: '100%',
           playerVars: {
             start: startSeconds || 0,
             autoplay: 1,
