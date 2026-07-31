@@ -141,14 +141,15 @@
       </a>
       <nav class="footer-links" aria-label="Footer">
         <a href="pricing.html">Pricing</a>
-        <a href="#">For creators</a>
-        <a href="#">Contact</a>
+        <a href="mailto:podarticle@gmail.com?subject=PodArticle%20for%20creators">For creators</a>
+        <a href="mailto:podarticle@gmail.com">Contact</a>
       </nav>
       <p class="footer-copy">Made for people who love podcasts but don't have 90 minutes. &copy; 2026 PodArticle.</p>
     </div>
   </footer>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="messages.js"></script>
   <script src="theme.js" defer></script>
   <script src="auth.js" defer></script>
   <script>
@@ -182,42 +183,92 @@
         manage.className = 'manage-link';
         manage.innerHTML = 'Want to switch plans or cancel? <a href="#" id="manage-sub">Manage your subscription</a>';
         grid.after(manage);
-        document.getElementById('manage-sub').addEventListener('click', async function (e) {
+        const link = document.getElementById('manage-sub');
+        link.addEventListener('click', async function (e) {
           e.preventDefault();
-          this.textContent = 'Opening your subscription portal…';
-          const r = await fetch('/api/portal', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + session.access_token }
-          });
-          const d = await r.json();
-          if (d.url) window.location.href = d.url;
-          else { this.textContent = d.error || 'Something went wrong'; }
+          const label = link.textContent;
+          link.textContent = 'Opening your subscription settings…';
+          const fail = function (code) {
+            link.textContent = label;
+            planNotice(link, code === 'AUTH_REQUIRED' ? 'AUTH_EXPIRED' : code || 'PORTAL_FAILED');
+          };
+          try {
+            const r = await fetch('/api/portal', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + session.access_token }
+            });
+            const d = await r.json().catch(function () { return {}; });
+            if (d.url) window.location.href = d.url;
+            else fail(d.code);
+          } catch {
+            fail('NETWORK');
+          }
         });
       }
     } catch {}
-  })();
+  });
+
+  // Inline, plain-English feedback next to the control that failed. Takes an API error
+  // code and renders the shared copy for it — never the API's own error string.
+  function planNotice(anchor, code) {
+    const copy = window.PAMessages.get(code);
+    let el = anchor.parentElement.querySelector('.plan-notice');
+    if (!el) {
+      el = document.createElement('span');
+      el.className = 'plan-notice';
+      anchor.after(el);
+    }
+    el.replaceChildren();
+    const title = document.createElement('strong');
+    title.textContent = copy.title + '. ';
+    el.append(title, copy.body);
+    if (copy.support) {
+      const mail = document.createElement('a');
+      mail.href = 'mailto:' + window.PAMessages.SUPPORT_EMAIL;
+      mail.textContent = window.PAMessages.SUPPORT_EMAIL;
+      el.append(' Email ', mail, ' and we will help.');
+    }
+    return el;
+  }
 
   document.querySelectorAll('[data-plan]').forEach(function (btn) {
     btn.addEventListener('click', async function () {
-      btn.disabled = true;
       const original = btn.textContent;
-      btn.textContent = 'Redirecting to checkout…';
-      try {
-        const session = await window.PAAuth?.getSession();
-        const headers = { 'Content-Type': 'application/json' };
-        if (session?.access_token) headers.Authorization = `Bearer ${session.access_token}`;
-        const r = await fetch('/api/checkout', {
-          method: 'POST',
-          headers,
-          body: JSON.stringify({ plan: btn.dataset.plan })
-        });
-        const data = await r.json();
-        if (!r.ok || !data.url) throw new Error(data.error || 'Checkout failed');
-        window.location.href = data.url;
-      } catch (err) {
+      btn.disabled = true;
+      btn.textContent = 'Taking you to checkout…';
+
+      const restore = function (code) {
         btn.textContent = original;
         btn.disabled = false;
-        alert(err.message || 'Something went wrong — please try again.');
+        planNotice(btn, code);
+      };
+
+      try {
+        const session = await window.PAAuth?.getSession();
+        if (!session?.access_token) {
+          restore('AUTH_REQUIRED_CHECKOUT');
+          if (window.PAAuth) window.PAAuth.signIn();
+          return;
+        }
+        const r = await fetch('/api/checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + session.access_token },
+          body: JSON.stringify({ plan: btn.dataset.plan })
+        });
+        // A proxy error page is HTML, not JSON — do not let the parse failure surface.
+        const data = await r.json().catch(function () { return {}; });
+        if (!r.ok || !data.url) {
+          if (data.code === 'AUTH_REQUIRED') {
+            restore('AUTH_REQUIRED_CHECKOUT');
+            if (window.PAAuth) window.PAAuth.signIn();
+            return;
+          }
+          restore(data.code || 'CHECKOUT_FAILED');
+          return;
+        }
+        window.location.href = data.url;
+      } catch {
+        restore('NETWORK');
       }
     });
   });

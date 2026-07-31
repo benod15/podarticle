@@ -16,10 +16,42 @@
     return data.session;
   }
 
-  async function signIn() {
+  // A YouTube link the reader pasted before being sent to Google. Kept in localStorage
+  // because the OAuth round trip leaves the origin, and restored on the way back so
+  // nobody has to paste the same link twice.
+  const PENDING_KEY = 'pa_pending_url';
+  const PENDING_TTL_MS = 30 * 60 * 1000;
+
+  function setPendingUrl(url) {
+    try {
+      if (url) localStorage.setItem(PENDING_KEY, JSON.stringify({ url, at: Date.now() }));
+    } catch {}
+  }
+
+  // Reads and clears the pending link. Stale entries are dropped so an abandoned
+  // sign-in from last week does not resurface a link out of nowhere.
+  function takePendingUrl() {
+    let raw = null;
+    try {
+      raw = localStorage.getItem(PENDING_KEY);
+      localStorage.removeItem(PENDING_KEY);
+    } catch {}
+    if (!raw) return null;
+    try {
+      const { url, at } = JSON.parse(raw);
+      return at && Date.now() - at < PENDING_TTL_MS ? url : null;
+    } catch {
+      return null;
+    }
+  }
+
+  async function signIn(options) {
+    const opts = options || {};
+    if (opts.pendingUrl) setPendingUrl(opts.pendingUrl);
     await client.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: window.location.origin + '/' },
+      // Come back to the page they left, not always the homepage.
+      options: { redirectTo: opts.returnTo || window.location.href },
     });
   }
 
@@ -32,7 +64,7 @@
     client.auth.onAuthStateChange((_event, session) => cb(session));
   }
 
-  window.PAAuth = { client, getSession, signIn, signOut, onAuthChange };
+  window.PAAuth = { client, getSession, signIn, signOut, onAuthChange, setPendingUrl, takePendingUrl };
 
   // Render the header auth button on pages that include the slot.
   async function renderAuthButton() {
