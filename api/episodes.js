@@ -8,14 +8,14 @@ import { getUser } from '../lib/auth.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
-    return res.status(405).json({ error: 'Method not allowed' });
+    return res.status(405).json({ error: 'Method not allowed', code: 'UNAVAILABLE' });
   }
 
   const { slug } = req.query || {};
 
   if (slug) {
     const ep = await getEpisodeBySlug(String(slug));
-    if (!ep) return res.status(404).json({ error: 'Episode not found' });
+    if (!ep) return res.status(404).json({ error: 'Episode not found', code: 'NOT_FOUND' });
     return res.status(200).json({
       video_id: ep.video_id,
       slug: ep.slug,

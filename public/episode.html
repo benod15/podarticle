@@ -50,6 +50,7 @@
   </footer>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="messages.js"></script>
   <script src="theme.js" defer></script>
   <script src="auth.js" defer></script>
   <script src="youtube.js" defer></script>
@@ -58,7 +59,7 @@
     var root = document.getElementById('episode-root');
     var params = new URLSearchParams(window.location.search);
     var vid = params.get('v');
-    var SUPPORT_EMAIL = 'podarticle@gmail.com';
+    var SUPPORT_EMAIL = window.PAMessages.SUPPORT_EMAIL;
 
     // Renders a friendly, self-explanatory state. Never surfaces raw API or parser output.
     function showNotice(heading, body, actions) {
@@ -124,40 +125,20 @@
       return;
     }
 
+    // The API's `code` picks the copy; neither the code nor the API's `error` text is
+    // ever rendered. An unmapped or missing code falls back to plain "our side" copy.
     function handleFailure(status, data) {
-      if (data.code === 'AUTH_REQUIRED') {
-        showNotice(
-          'Sign in to map this episode',
-          'Nobody has mapped this episode yet. Sign in with Google and we will build the section map for you — your first 5 are free.',
-          [signInButton()]
-        );
-        return;
-      }
-      if (data.code === 'LIMIT_REACHED') {
-        showNotice(
-          'You have used your 5 free podarticles',
-          'Subscribe for unlimited episode maps. Everything already in the library stays free to browse.',
-          [linkButton('pricing.html', 'See plans', 'btn-primary')]
-        );
-        return;
-      }
-      if (data.code === 'NO_TRANSCRIPT') {
-        showNotice(
-          'This episode has no captions',
-          'We build section maps from the spoken transcript, and YouTube has no caption track for this video yet. Try another episode.',
-          []
-        );
-        return;
-      }
       if (status >= 500 && attempts < 2) {
         setTimeout(loadEpisode, 3000);
         return;
       }
-      showNotice(
-        'We could not map this episode',
-        'Something went wrong on our side while building the section map. Please try again in a moment.',
-        []
-      );
+      var copy = window.PAMessages.get(data.code);
+      var actions = [];
+      if (copy.action && copy.action.type === 'signin') actions.push(signInButton());
+      if (copy.action && copy.action.type === 'link') {
+        actions.push(linkButton(copy.action.href, copy.action.label, 'btn-primary'));
+      }
+      showNotice(copy.title, copy.body, actions);
     }
 
     function loadEpisode() {
@@ -185,11 +166,8 @@
             setTimeout(loadEpisode, 3000);
             return;
           }
-          showNotice(
-            'We could not reach PodArticle',
-            'Check your connection and try again — your episode map is still waiting.',
-            []
-          );
+          var copy = window.PAMessages.get('NETWORK');
+          showNotice(copy.title, copy.body, []);
         });
     }
     loadEpisode();

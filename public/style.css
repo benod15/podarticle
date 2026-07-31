@@ -172,7 +172,9 @@ ul[role="list"] { list-style: none; }
   max-width: 34rem; margin: 0 auto .9rem;
 }
 
-.plan-notice { font-size: 13px; color: var(--color-text-muted); line-height: 1.5; margin-top: .75rem; }
+.plan-notice { display: block; font-size: 13px; color: var(--color-text-muted); line-height: 1.55; margin-top: .75rem; text-align: left; }
+.plan-notice strong { color: var(--color-ink); font-weight: 600; }
+.plan-notice a { color: inherit; }
 
 .plan-badge {
   display: inline-flex; align-items: center;
@@ -275,10 +277,24 @@ ul[role="list"] { list-style: none; }
   50% { box-shadow: 0 0 0 6px rgba(90,138,120,0); }
 }
 .analysis-error {
+  display: flex; flex-direction: column; align-items: center; gap: .35rem;
   margin: 14px 0 0; font-size: 14px; color: #b0574a; text-align: center;
-  padding: 12px 16px; border: 1px solid rgba(176,87,74,.35); border-radius: 10px;
-  background: rgba(176,87,74,.06);
+  padding: 14px 18px; border: 1px solid rgba(176,87,74,.35); border-radius: 10px;
+  background: rgba(176,87,74,.06); line-height: 1.6;
 }
+.analysis-error[hidden] { display: none; }
+.analysis-error strong { font-weight: 600; }
+.analysis-error-action {
+  margin-top: .4rem; padding: .5rem 1.1rem; border-radius: var(--radius-full);
+  background: #b0574a; color: #fff; font-weight: 500; text-decoration: none;
+}
+.analysis-error-help { font-size: 13px; opacity: .8; }
+.analysis-error-help a { color: inherit; }
+
+/* Failure caught before any work started — a bar and stage list would be misleading. */
+.analysis-progress.error-only .analysis-progress-track,
+.analysis-progress.error-only .analysis-stages { display: none; }
+.analysis-progress.error-only .analysis-error { margin-top: 0; }
 
 @media (max-width: 560px) {
   .link-form { flex-direction: column; border-radius: var(--radius-lg); }

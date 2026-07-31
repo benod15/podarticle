@@ -149,6 +149,7 @@
   </footer>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="messages.js"></script>
   <script src="theme.js" defer></script>
   <script src="auth.js" defer></script>
   <script>
@@ -182,30 +183,51 @@
         manage.className = 'manage-link';
         manage.innerHTML = 'Want to switch plans or cancel? <a href="#" id="manage-sub">Manage your subscription</a>';
         grid.after(manage);
-        document.getElementById('manage-sub').addEventListener('click', async function (e) {
+        const link = document.getElementById('manage-sub');
+        link.addEventListener('click', async function (e) {
           e.preventDefault();
-          this.textContent = 'Opening your subscription portal…';
-          const r = await fetch('/api/portal', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + session.access_token }
-          });
-          const d = await r.json().catch(function () { return {}; });
-          if (d.url) window.location.href = d.url;
-          else { this.textContent = d.error || 'Could not open the portal — email podarticle@gmail.com and we will sort it out.'; }
+          const label = link.textContent;
+          link.textContent = 'Opening your subscription settings…';
+          const fail = function (code) {
+            link.textContent = label;
+            planNotice(link, code === 'AUTH_REQUIRED' ? 'AUTH_EXPIRED' : code || 'PORTAL_FAILED');
+          };
+          try {
+            const r = await fetch('/api/portal', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + session.access_token }
+            });
+            const d = await r.json().catch(function () { return {}; });
+            if (d.url) window.location.href = d.url;
+            else fail(d.code);
+          } catch {
+            fail('NETWORK');
+          }
         });
       }
     } catch {}
-  })();
+  });
 
-  // Inline, plain-English feedback under the plan button — never a raw error in an alert.
-  function planNotice(btn, text) {
-    let el = btn.parentElement.querySelector('.plan-notice');
+  // Inline, plain-English feedback next to the control that failed. Takes an API error
+  // code and renders the shared copy for it — never the API's own error string.
+  function planNotice(anchor, code) {
+    const copy = window.PAMessages.get(code);
+    let el = anchor.parentElement.querySelector('.plan-notice');
     if (!el) {
-      el = document.createElement('p');
+      el = document.createElement('span');
       el.className = 'plan-notice';
-      btn.after(el);
+      anchor.after(el);
     }
-    el.textContent = text;
+    el.replaceChildren();
+    const title = document.createElement('strong');
+    title.textContent = copy.title + '. ';
+    el.append(title, copy.body);
+    if (copy.support) {
+      const mail = document.createElement('a');
+      mail.href = 'mailto:' + window.PAMessages.SUPPORT_EMAIL;
+      mail.textContent = window.PAMessages.SUPPORT_EMAIL;
+      el.append(' Email ', mail, ' and we will help.');
+    }
     return el;
   }
 
@@ -213,18 +235,18 @@
     btn.addEventListener('click', async function () {
       const original = btn.textContent;
       btn.disabled = true;
-      btn.textContent = 'Redirecting to checkout…';
+      btn.textContent = 'Taking you to checkout…';
 
-      const restore = function (message) {
+      const restore = function (code) {
         btn.textContent = original;
         btn.disabled = false;
-        planNotice(btn, message);
+        planNotice(btn, code);
       };
 
       try {
         const session = await window.PAAuth?.getSession();
         if (!session?.access_token) {
-          restore('Sign in with Google first so we can attach your subscription to your account.');
+          restore('AUTH_REQUIRED_CHECKOUT');
           if (window.PAAuth) window.PAAuth.signIn();
           return;
         }
@@ -237,16 +259,16 @@
         const data = await r.json().catch(function () { return {}; });
         if (!r.ok || !data.url) {
           if (data.code === 'AUTH_REQUIRED') {
-            restore(data.error);
+            restore('AUTH_REQUIRED_CHECKOUT');
             if (window.PAAuth) window.PAAuth.signIn();
             return;
           }
-          restore(data.error || 'We could not open checkout just now. Please try again, or email podarticle@gmail.com.');
+          restore(data.code || 'CHECKOUT_FAILED');
           return;
         }
         window.location.href = data.url;
       } catch {
-        restore('Network error — check your connection and try again.');
+        restore('NETWORK');
       }
     });
   });

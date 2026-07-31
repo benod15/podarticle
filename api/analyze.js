@@ -4,6 +4,10 @@
 //   2. transcript — pulling the caption track (Supadata)
 //   3. analysis   — mapping sections (Gemini)
 //   4. save       — publishing to the library (Supabase)
+//
+// Failure responses always carry a `code`. That code is the contract the client branches
+// on; the reader-facing sentence for it lives in public/messages.js. The `error` field
+// beside it is a short diagnostic label for logs and is never rendered.
 import { extractVideoId, fetchMetadata, parseChapters, fetchTranscript, transcriptToLines, TranscriptUnavailable } from '../lib/youtube.js';
 import { analyzeWithGemini } from '../lib/gemini.js';
 import { getEpisodeByVideoId, saveEpisode, slugify } from '../lib/db.js';
@@ -11,7 +15,7 @@ import { getUser, checkAllowance, recordUsage, FREE_LIMIT } from '../lib/auth.js
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+    return res.status(405).json({ error: 'Method not allowed', code: 'UNAVAILABLE' });
   }
 
   // Vercel leaves the body as a string when the content-type header is missing.
@@ -21,7 +25,7 @@ export default async function handler(req, res) {
   }
   const videoId = extractVideoId(body.url);
   if (!videoId) {
-    return res.status(422).json({ error: "That doesn't look like a YouTube link. Paste the full video URL.", code: 'BAD_URL' });
+    return res.status(422).json({ error: 'Unrecognised YouTube URL', code: 'BAD_URL' });
   }
 
   // Library hit → instant return, open to everyone (browsing is free).
@@ -55,17 +59,14 @@ export default async function handler(req, res) {
   const geminiKey = process.env.GEMINI_API_KEY;
   if (!supadataKey || !geminiKey) {
     console.error('analyze: missing SUPADATA_API_KEY or GEMINI_API_KEY');
-    return res.status(503).json({
-      error: 'Episode mapping is temporarily unavailable. Please try again shortly.',
-      code: 'UNAVAILABLE',
-    });
+    return res.status(503).json({ error: 'Analysis provider keys missing', code: 'UNAVAILABLE' });
   }
 
   // Free-5 gate — new analyses only
   const allowance = await checkAllowance(user.id);
   if (!allowance.allowed) {
     return res.status(402).json({
-      error: `You've used your ${FREE_LIMIT} free podarticles. Subscribe for unlimited episode maps.`,
+      error: `Free limit of ${FREE_LIMIT} reached`,
       code: 'LIMIT_REACHED',
       upgrade_url: '/pricing.html',
     });
@@ -123,13 +124,12 @@ export default async function handler(req, res) {
     });
   } catch (err) {
     if (err instanceof TranscriptUnavailable || err.code === 'NO_TRANSCRIPT') {
-      return res.status(422).json({ error: err.message, code: 'NO_TRANSCRIPT' });
+      // err.message is upstream/parser text — the client renders its own copy from the code.
+      console.warn('analyze: no transcript', videoId, err.message);
+      return res.status(422).json({ error: 'Transcript unavailable', code: 'NO_TRANSCRIPT' });
     }
     // Upstream messages can carry provider internals — log them, show the reader plain copy.
     console.error('analyze failed', err);
-    return res.status(500).json({
-      error: 'We hit a snag mapping that episode. Please try again in a moment.',
-      code: 'ANALYSIS_FAILED',
-    });
+    return res.status(500).json({ error: 'Analysis pipeline failed', code: 'ANALYSIS_FAILED' });
   }
 }

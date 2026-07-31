@@ -50,8 +50,6 @@
     if (progressBar) progressBar.style.width = pct + '%';
   }
 
-  const SUPPORT_EMAIL = 'podarticle@gmail.com';
-
   // Swap the analyzer CTA for a Google sign-in prompt, carrying the pasted link across
   // the OAuth round trip so it is waiting in the box when the reader lands back here.
   function showAuthPrompt(pendingUrl) {
@@ -92,10 +90,43 @@
     if (progressBar) progressBar.style.width = '100%';
   }
 
-  function failProgress(msg) {
+  // Renders the reader-facing copy for a failure code: what happened, then what to do
+  // about it. The code itself and the API's `error` string never reach the page.
+  // `stalled` marks a failure caught before any work began — the stage list and bar
+  // would be lying, so the panel shows the message alone.
+  function failProgress(code, stalled) {
     clearTimers();
+    if (progress) {
+      progress.hidden = false;
+      progress.classList.toggle('error-only', !!stalled);
+    }
     if (errorEl) {
-      errorEl.textContent = msg;
+      const copy = window.PAMessages.get(code);
+      errorEl.replaceChildren();
+
+      const title = document.createElement('strong');
+      title.textContent = copy.title;
+      const body = document.createElement('span');
+      body.textContent = copy.body;
+      errorEl.append(title, body);
+
+      if (copy.action?.type === 'link') {
+        const a = document.createElement('a');
+        a.className = 'analysis-error-action';
+        a.href = copy.action.href;
+        a.textContent = copy.action.label;
+        errorEl.appendChild(a);
+      }
+      if (copy.support) {
+        const help = document.createElement('span');
+        help.className = 'analysis-error-help';
+        help.append('Still stuck? Email ');
+        const mail = document.createElement('a');
+        mail.href = 'mailto:' + window.PAMessages.SUPPORT_EMAIL;
+        mail.textContent = window.PAMessages.SUPPORT_EMAIL;
+        help.append(mail, ' with the link and we will map it for you.');
+        errorEl.appendChild(help);
+      }
       errorEl.hidden = false;
     }
     if (progressBar) progressBar.classList.add('failed');
@@ -103,13 +134,17 @@
 
   function hideProgress() {
     clearTimers();
-    if (progress) progress.hidden = true;
+    if (progress) {
+      progress.hidden = true;
+      progress.classList.remove('error-only');
+    }
     if (errorEl) errorEl.hidden = true;
   }
 
   function startProgress() {
     if (!progress) return;
     progress.hidden = false;
+    progress.classList.remove('error-only');
     if (errorEl) errorEl.hidden = true;
     if (progressBar) {
       progressBar.classList.remove('failed');
@@ -163,15 +198,10 @@
           showAuthPrompt(url);
           return;
         }
-        if (data.code === 'LIMIT_REACHED') {
-          failProgress(data.error || "You've used your 5 free podarticles. Taking you to the plans…");
-          setTimeout(() => { window.location.href = '/pricing.html'; }, 1800);
-          return;
-        }
-        failProgress(
-          data.error ||
-            `Something went wrong mapping that episode. Please try again — if it keeps happening, email ${SUPPORT_EMAIL}.`
-        );
+        // Every code renders its own explanation plus the button that resolves it —
+        // including LIMIT_REACHED, which links to the plans instead of yanking the
+        // page away mid-sentence.
+        failProgress(data.code);
         return;
       }
       finishProgress();
@@ -180,7 +210,7 @@
       try { sessionStorage.setItem('pa_result_' + data.video_id, JSON.stringify(data)); } catch {}
       window.location.href = `/episode.html?v=${data.video_id}`;
     } catch {
-      failProgress('Network error — check your connection and try again.');
+      failProgress('NETWORK');
     } finally {
       if (btn) btn.disabled = false;
     }
@@ -190,7 +220,12 @@
     form.addEventListener('submit', (e) => {
       e.preventDefault();
       const url = (urlInput?.value || '').trim();
-      if (url) runAnalysis(url);
+      if (!url) {
+        failProgress('EMPTY_URL', true);
+        urlInput?.focus();
+        return;
+      }
+      runAnalysis(url);
     });
 
     // Back from Google: put the saved link back in the box and, if sign-in worked,
