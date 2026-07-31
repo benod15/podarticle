@@ -407,10 +407,16 @@ ul[role="list"] { list-style: none; }
 /* =========================================================
    EPISODE PAGE
    ========================================================= */
-.ep-hero {
-  position: relative; width: 100%; aspect-ratio: 16/7; overflow: hidden;
-  background: var(--color-surface-offset);
+/* Hero and player share one box so swapping the hero for the player on load shifts nothing.
+   Width tracks the .ep-main text column (720px cap, 20px gutters). */
+.ep-hero,
+.ep-player {
+  position: relative; display: block;
+  width: calc(100% - 40px); max-width: 680px; margin: 28px auto 0;
+  aspect-ratio: 16 / 9; overflow: hidden;
+  border-radius: var(--radius-lg);
 }
+.ep-hero { background: var(--color-surface-offset); }
 .ep-hero img { width: 100%; height: 100%; object-fit: cover; }
 .ep-hero-play {
   position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
@@ -425,12 +431,14 @@ ul[role="list"] { list-style: none; }
 .ep-hero-play-btn svg { width: 22px; height: 22px; color: var(--color-ink); margin-left: 3px; }
 
 /* In-page player: poster until first play, then the YouTube iframe every timestamp seeks. */
-.ep-player {
-  position: relative; width: 100%; aspect-ratio: 16/9;
-  background: #000; overflow: hidden;
-}
+.ep-player { background: #000; }
+.ep-player.is-playing { box-shadow: var(--shadow-lg); }
 .ep-player-frame { position: absolute; inset: 0; }
-.ep-player-frame iframe { width: 100%; height: 100%; border: 0; display: block; }
+/* The IFrame API replaces its target element, so the iframe is sized directly rather than
+   through a class the API would have thrown away. */
+.ep-player-frame iframe {
+  position: absolute; inset: 0; width: 100%; height: 100%; border: 0; display: block;
+}
 .ep-player-poster {
   position: absolute; inset: 0; padding: 0; border: 0; cursor: pointer;
   background: var(--color-surface-offset); display: block; width: 100%;
@@ -572,4 +580,8 @@ details[open] .chapter-chevron { transform: rotate(180deg); }
 @media (max-width: 560px) {
   .top5-card { flex-wrap: wrap; }
   .top5-play { display: none; }
+  /* Edge to edge on phones — gutters here would push the 16:9 player under YouTube's
+     200px minimum height on narrow devices. */
+  .ep-hero,
+  .ep-player { width: 100%; margin-top: 0; border-radius: 0; }
 }
