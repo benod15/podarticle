@@ -1,0 +1,177 @@
+# Brand & ops setup
+
+Two jobs that need a dashboard and a DNS record, not a deploy:
+
+1. Serving Supabase auth from `api.podarticle.com`, so Google's consent screen says
+   PodArticle instead of `agmajezadtqkrnuwlmyk.supabase.co`.
+2. Getting a `@podarticle.com` support mailbox so the site can stop pointing at Gmail.
+
+Both are written so the code change is the *last* step. Nothing here breaks the live site
+until the final swap, and each swap is one line.
+
+Reference values used throughout:
+
+| Thing | Value |
+| --- | --- |
+| Production domain | `podarticle.com` (nameservers on Vercel) |
+| Supabase project ref | `agmajezadtqkrnuwlmyk` |
+| Target auth host | `api.podarticle.com` |
+| Target support address | `hello@podarticle.com` |
+
+---
+
+## 1. Supabase custom domain → `api.podarticle.com`
+
+Custom domains are a Supabase Pro feature and are billed as an add-on (about $10/month
+per domain). The project is already on Pro.
+
+### 1a. Start the domain in Supabase
+
+Dashboard → project `agmajezadtqkrnuwlmyk` → **Settings → General → Custom Domains** →
+enter `api.podarticle.com` and start verification.
+
+Supabase gives back two things to create in DNS:
+
+- a `CNAME` for `api` pointing at `agmajezadtqkrnuwlmyk.supabase.co`
+- one or more `TXT` records proving ownership (the exact names and values are generated
+  per project — copy them from the dashboard, they are not guessable)
+
+### 1b. Add the DNS records on Vercel
+
+Vercel dashboard → **Domains → podarticle.com → DNS**. Add exactly what Supabase showed:
+
+| Type | Name | Value |
+| --- | --- | --- |
+| CNAME | `api` | `agmajezadtqkrnuwlmyk.supabase.co` |
+| TXT | *(as shown by Supabase)* | *(as shown by Supabase)* |
+
+Leave the TTL at the default. Do not proxy or redirect `api` anywhere else.
+
+### 1c. Verify
+
+Back in Supabase, press **Verify**. It can take anywhere from a few minutes to a couple of
+hours for DNS to propagate; re-press rather than re-creating the records.
+
+Check from a terminal:
+
+```sh
+dig +short api.podarticle.com
+curl -sI https://api.podarticle.com/auth/v1/health
+```
+
+Do not continue until the `curl` returns a certificate that is valid for
+`api.podarticle.com` and a 200.
+
+### 1d. Point Google OAuth at the new callback
+
+Google Cloud Console → **APIs & Services → Credentials** → the OAuth 2.0 Client ID that
+PodArticle uses → **Authorized redirect URIs**.
+
+**Add** (do not remove the old one yet):
+
+```
+https://api.podarticle.com/auth/v1/callback
+```
+
+The existing `https://agmajezadtqkrnuwlmyk.supabase.co/auth/v1/callback` stays until the
+switch has been live for a few days. Google changes can take a few minutes to apply.
+
+While you are here, the consent screen's **App name**, **support email** and **App domain**
+are what users actually read — set them to PodArticle, the support address from part 2,
+and `podarticle.com`.
+
+### 1e. Check the Supabase redirect allow-list
+
+Supabase → **Authentication → URL Configuration**:
+
+- **Site URL**: `https://podarticle.com`
+- **Redirect URLs** must include `https://podarticle.com/**`
+
+Sign-in sends the reader back to the exact page they started on
+(`redirectTo: window.location.href` in `public/auth.js`), so the wildcard matters —
+without it, signing in from `/episode.html?v=…` fails while the homepage works.
+
+### 1f. Flip the code
+
+In `public/auth.js`, one line:
+
+```js
+const SUPABASE_URL = 'https://api.podarticle.com';
+```
+
+The anon key does not change. Open a PR, merge, let it deploy.
+
+### 1g. Confirm, then clean up
+
+Sign out and sign back in on production. The Google screen should now name
+`api.podarticle.com`. Test from the homepage *and* from an episode page, since those take
+different redirect paths.
+
+After a few days with no sign-in complaints, the old
+`agmajezadtqkrnuwlmyk.supabase.co/auth/v1/callback` URI can come out of Google.
+
+**If sign-in breaks:** revert `SUPABASE_URL` to
+`https://agmajezadtqkrnuwlmyk.supabase.co` and redeploy. Supabase keeps serving the
+original host after a custom domain is added, so the rollback is immediate.
+
+---
+
+## 2. `@podarticle.com` support email
+
+The site currently shows `podarticle@gmail.com`. It works, which is the only reason it is
+still there — an on-brand address that silently bounces would be worse. Set up receiving
+first, swap the strings second.
+
+### Option A — ImprovMX forwarding (free, ~10 minutes) — recommended to start
+
+Forwarding only: mail sent to `hello@podarticle.com` lands in the existing Gmail inbox.
+Free tier covers unlimited aliases on one domain.
+
+1. Sign up at improvmx.com and add `podarticle.com`.
+2. Add the two MX records it gives you in Vercel DNS (**Domains → podarticle.com → DNS**):
+
+   | Type | Name | Priority | Value |
+   | --- | --- | --- | --- |
+   | MX | `@` | 10 | `mx1.improvmx.com` |
+   | MX | `@` | 20 | `mx2.improvmx.com` |
+
+3. Create the aliases: `hello@` and `support@`, both forwarding to the Gmail address.
+4. Send a test message to `hello@podarticle.com` and confirm it arrives.
+
+Replying still comes *from* Gmail unless you also add the address as a Gmail "Send mail
+as" identity — worth doing, since a reply from the Gmail address undoes the point.
+ImprovMX documents the SMTP settings for that.
+
+### Option B — Google Workspace ($7-ish/user/month)
+
+A real mailbox rather than forwarding: proper sending, no reply-address workaround,
+Drive and Docs on the domain. Worth it if PodArticle starts sending anything transactional
+or if the Gmail workaround gets annoying. Setup is Google's guided flow — it writes the
+MX records for you and verifies the domain.
+
+**Recommendation:** Option A now, Option B when there is a reason to pay for it.
+Moving from A to B later is just replacing the MX records.
+
+### Then swap the strings
+
+Once mail to `hello@podarticle.com` demonstrably arrives, replace the address everywhere
+in one commit:
+
+```sh
+grep -rl 'podarticle@gmail\.com' public/ | xargs sed -i 's/podarticle@gmail\.com/hello@podarticle.com/g'
+grep -rn 'podarticle@gmail\.com' .   # should print nothing
+```
+
+That covers all of:
+
+- `public/messages.js` — `SUPPORT_EMAIL`, the address used by every error message
+- `public/index.html`, `public/pricing.html`, `public/episode.html` — footer
+  "For creators" / "Contact" links, plus the support question in the pricing FAQ
+- `public/episodes/jared-isaacman-moon-base.html` — the one seed page with its own
+  footer links
+
+Drop the comment above `SUPPORT_EMAIL` in `public/messages.js` at the same time, since it
+only exists to explain why the address was still Gmail.
+
+Keep the Gmail address forwarding for a while afterwards — old pages stay in Google's
+index, and people mail addresses they saw months ago.

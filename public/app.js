@@ -61,8 +61,8 @@
     const note = document.createElement('p');
     note.className = 'auth-prompt-note';
     note.textContent = pendingUrl
-      ? 'We saved your link. Sign in with Google and we will pick up right where you left off — your first 5 are free.'
-      : 'Sign in with Google to map an episode. Your first 5 are free, and browsing the library never needs an account.';
+      ? 'We saved your link. Sign in with Google and we will pick up right where you left off — mapping is free, with no limit.'
+      : 'Sign in with Google to map an episode. Mapping is free with no limit right now, and browsing the library never needs an account.';
 
     const btn = document.createElement('button');
     btn.className = 'auth-btn auth-btn-lg';
