@@ -189,7 +189,7 @@ The address was swapped across:
 
 - `public/messages.js` — `SUPPORT_EMAIL`, the address used by every error message
 - `public/index.html`, `public/pricing.html`, `public/episode.html` — footer
-  "For creators" / "Contact" links, plus the support question in the pricing FAQ
+  "Contact" links, plus the support question in the pricing FAQ
 - `public/episodes/jared-isaacman-moon-base.html` — the one seed page with its own
   footer links
 
