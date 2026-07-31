@@ -16,6 +16,8 @@
   var playerReady = false;
   var pendingSeek = null;
   var apiFailed = false;
+  var engaged = false;
+  var lastOrigin = null;
 
   // ---------- Parsing ----------
   function videoFromHref(href) {
@@ -90,6 +92,7 @@
 
     hero.replaceWith(shell);
     mount = shell;
+    addBackButton();
     loadApi();
   }
 
@@ -132,6 +135,7 @@
   function seek(seconds) {
     if (!mount || apiFailed) return false;
     seconds = Math.max(0, Math.floor(seconds || 0));
+    engaged = true;
     if (playerReady && player && typeof player.seekTo === 'function') {
       player.seekTo(seconds, true);
       player.playVideo();
@@ -140,6 +144,7 @@
       createPlayer(seconds);
     }
     reveal();
+    updateBackButton();
     return true;
   }
 
@@ -149,6 +154,62 @@
     if (box.top < 0 || box.bottom > window.innerHeight) {
       mount.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
+  }
+
+  // ---------- Back to sections ----------
+  // Playing a section scrolls the page up to the player, which used to leave the browser
+  // back arrow as the only way back to the list. This is the in-page return trip: a pill
+  // that appears once someone is actually watching and the player fills the screen, and
+  // takes them back to the section they came from.
+  var backBtn = null;
+
+  function playerVisibleRatio() {
+    if (!mount) return 0;
+    var box = mount.getBoundingClientRect();
+    if (!box.height) return 0;
+    var shown = Math.min(box.bottom, window.innerHeight) - Math.max(box.top, 0);
+    return Math.max(0, shown) / box.height;
+  }
+
+  function updateBackButton() {
+    if (!backBtn) return;
+    backBtn.hidden = !(engaged && playerVisibleRatio() > 0.5);
+  }
+
+  function addBackButton() {
+    if (backBtn || !document.querySelector('.ep-main')) return;
+    backBtn = document.createElement('button');
+    backBtn.type = 'button';
+    backBtn.className = 'ep-back-to-sections';
+    backBtn.hidden = true;
+    backBtn.innerHTML =
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">' +
+      '<path d="M12 5v14M5 12l7 7 7-7"/></svg>Back to sections';
+    backBtn.addEventListener('click', function () {
+      var target = lastOrigin && document.contains(lastOrigin) ? lastOrigin : document.querySelector('.ep-main');
+      if (!target) return;
+      // The pill hides itself as soon as the sections come back into view, so hand focus
+      // to the destination first — otherwise a keyboard user is left with nothing focused.
+      if (!target.hasAttribute('tabindex') && target.tabIndex < 0) target.setAttribute('tabindex', '-1');
+      target.focus({ preventScroll: true });
+      target.scrollIntoView({ behavior: 'smooth', block: target === lastOrigin ? 'center' : 'start' });
+    });
+    document.body.appendChild(backBtn);
+
+    var queued = false;
+    window.addEventListener(
+      'scroll',
+      function () {
+        if (queued) return;
+        queued = true;
+        requestAnimationFrame(function () {
+          queued = false;
+          updateBackButton();
+        });
+      },
+      { passive: true }
+    );
+    window.addEventListener('resize', updateBackButton, { passive: true });
   }
 
   // ---------- Click handling ----------
@@ -164,6 +225,9 @@
 
     var seconds = secondsFromHref(href);
     if (seconds == null) return; // "watch full episode": let it open on YouTube
+
+    // Remember where the click came from so "Back to sections" lands on that same card.
+    lastOrigin = link.closest('.top5-card, .chapter-group') || link;
 
     if (seek(seconds)) e.preventDefault();
   });

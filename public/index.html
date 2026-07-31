@@ -42,12 +42,13 @@
       <h1>Paste a podcast link. Watch only the parts that <em>matter to you</em>.</h1>
 
       <form class="link-form" data-link-form>
-        <input type="url" placeholder="Paste any YouTube podcast link..." aria-label="Podcast link">
+        <input type="text" inputmode="url" autocomplete="off" spellcheck="false" data-link-input placeholder="Paste any YouTube podcast link..." aria-label="Podcast link">
         <button type="submit">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 21l-4.35-4.35M17 10.5a6.5 6.5 0 1 1-13 0 6.5 6.5 0 0 1 13 0z"/></svg>
           Analyze
         </button>
       </form>
+      <p class="link-tip" data-link-tip aria-live="polite">On YouTube, tap <strong>Share</strong> then <strong>Copy link</strong> — that link always works. Messy links are fine too; we tidy them up.</p>
       <p class="hero-note">Browsing the library is free and needs no account. Sign in with Google to map your own — your first 5 are free. Every timestamp is <strong>verified against the actual transcript</strong> before it reaches you.</p>
       <div class="auth-prompt" data-auth-prompt hidden></div>
 
