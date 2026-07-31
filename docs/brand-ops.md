@@ -193,6 +193,9 @@ The address was swapped across:
 - `public/episodes/jared-isaacman-moon-base.html` — the one seed page with its own
   footer links
 
+Each of those four footers also carries a `.footer-bug` line ("Found a bug? Email …")
+with its own literal mailto:, so every footer holds two copies of the address.
+
 `SUPPORT_EMAIL` is the single source for the error-message surfaces; the mailto: links in
 the static footers are literal and have to be changed by hand alongside it.
 
