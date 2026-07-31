@@ -50,19 +50,27 @@
     if (progressBar) progressBar.style.width = pct + '%';
   }
 
+  // The hero note and the sign-in prompt both explain the free/account rules, so on a
+  // narrow screen they stack into a wall of small print. Only one is ever on screen.
+  function setHeroNoteVisible(visible) {
+    const note = document.querySelector('[data-hero-note]');
+    if (note) note.hidden = !visible;
+  }
+
   // Swap the analyzer CTA for a Google sign-in prompt, carrying the pasted link across
   // the OAuth round trip so it is waiting in the box when the reader lands back here.
   function showAuthPrompt(pendingUrl) {
     const slot = document.querySelector('[data-auth-prompt]');
     if (!slot || !window.PAAuth) return;
+    setHeroNoteVisible(false);
     slot.hidden = false;
     slot.replaceChildren();
 
     const note = document.createElement('p');
     note.className = 'auth-prompt-note';
     note.textContent = pendingUrl
-      ? 'We saved your link. Sign in with Google and we will pick up right where you left off — mapping is free, with no limit.'
-      : 'Sign in with Google to map an episode. Mapping is free with no limit right now, and browsing the library never needs an account.';
+      ? "Sign in with Google to map this episode — we'll keep your link ready."
+      : 'Sign in with Google to map an episode.';
 
     const btn = document.createElement('button');
     btn.className = 'auth-btn auth-btn-lg';
@@ -79,6 +87,7 @@
       slot.hidden = true;
       slot.replaceChildren();
     }
+    setHeroNoteVisible(true);
   }
 
   function finishProgress() {
