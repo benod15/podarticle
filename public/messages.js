@@ -7,7 +7,7 @@
 // plain English and what to do next.
 (function () {
   // Forwards to the Gmail inbox via ImprovMX — see docs/brand-ops.md.
-  var SUPPORT_EMAIL = 'hello@podarticle.com';
+  var SUPPORT_EMAIL = 'support@podarticle.com';
 
   // action: { type: 'signin' } | { type: 'link', href, label }
   var COPY = {

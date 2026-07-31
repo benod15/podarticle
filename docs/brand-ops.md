@@ -16,7 +16,7 @@ Reference values used throughout:
 | Production domain | `podarticle.com` (nameservers on Vercel) |
 | Supabase project ref | `agmajezadtqkrnuwlmyk` |
 | Target auth host | `api.podarticle.com` |
-| Target support address | `hello@podarticle.com` |
+| Target support address | `support@podarticle.com` |
 
 ---
 
@@ -144,15 +144,17 @@ original host after a custom domain is added, so the rollback is immediate.
 ## 2. `@podarticle.com` support email
 
 **Status:** done. ImprovMX forwarding is live and the site now shows
-`hello@podarticle.com` everywhere. Mail to it forwards to the Gmail inbox, so replies
-still need the Gmail "Send mail as" identity described below to go out on-brand.
+`support@podarticle.com` everywhere. The alias is a wildcard (`*@podarticle.com` → the
+Gmail inbox), so any address on the domain already works and changing which one the site
+advertises needs no DNS change. Replies still need the Gmail "Send mail as" identity
+described below to go out on-brand.
 
 The steps below are kept as the record of how it was set up, and for whoever moves this
 to a real mailbox later.
 
 ### Option A — ImprovMX forwarding (free, ~10 minutes) — recommended to start
 
-Forwarding only: mail sent to `hello@podarticle.com` lands in the existing Gmail inbox.
+Forwarding only: mail sent to `support@podarticle.com` lands in the existing Gmail inbox.
 Free tier covers unlimited aliases on one domain.
 
 1. Sign up at improvmx.com and add `podarticle.com`.
@@ -163,8 +165,9 @@ Free tier covers unlimited aliases on one domain.
    | MX | `@` | 10 | `mx1.improvmx.com` |
    | MX | `@` | 20 | `mx2.improvmx.com` |
 
-3. Create the aliases: `hello@` and `support@`, both forwarding to the Gmail address.
-4. Send a test message to `hello@podarticle.com` and confirm it arrives.
+3. Create a wildcard alias `*@` forwarding to the Gmail address, so every address on the
+   domain resolves and the site can advertise whichever one it wants.
+4. Send a test message to `support@podarticle.com` and confirm it arrives.
 
 Replying still comes *from* Gmail unless you also add the address as a Gmail "Send mail
 as" identity — worth doing, since a reply from the Gmail address undoes the point.
