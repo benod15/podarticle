@@ -10,7 +10,7 @@
 // beside it is a short diagnostic label for logs and is never rendered.
 import { extractVideoId, fetchMetadata, parseChapters, fetchTranscript, transcriptToLines, TranscriptUnavailable } from '../lib/youtube.js';
 import { analyzeWithGemini } from '../lib/gemini.js';
-import { getEpisodeByVideoId, saveEpisode, slugify } from '../lib/db.js';
+import { getEpisodeByVideoId, saveEpisode, addToLibrary, slugify } from '../lib/db.js';
 import { getUser, checkAllowance, recordUsage, FREE_LIMIT } from '../lib/auth.js';
 
 export default async function handler(req, res) {
@@ -32,6 +32,14 @@ export default async function handler(req, res) {
   // Auth is only required for NEW analyses below.
   const cached = await getEpisodeByVideoId(videoId);
   if (cached) {
+    // A cached episode still belongs in the reader's library. This is the path a new
+    // account hits most: the episodes worth pasting are usually the ones already mapped,
+    // and skipping it is why they came back to an empty library. Signed-out browsing
+    // stays open, so no token — or a stale one — is not an error here.
+    if (req.headers.authorization) {
+      const { user } = await getUser(req);
+      if (user) await addToLibrary(user.id, videoId);
+    }
     return res.status(200).json({
       video_id: videoId,
       slug: cached.slug,
@@ -106,6 +114,7 @@ export default async function handler(req, res) {
       visibility: 'private',
     });
     if (saved?.slug) slug = saved.slug;
+    await addToLibrary(user.id, videoId);
 
     return res.status(200).json({
       video_id: videoId,
