@@ -143,9 +143,12 @@ original host after a custom domain is added, so the rollback is immediate.
 
 ## 2. `@podarticle.com` support email
 
-The site currently shows `podarticle@gmail.com`. It works, which is the only reason it is
-still there — an on-brand address that silently bounces would be worse. Set up receiving
-first, swap the strings second.
+**Status:** done. ImprovMX forwarding is live and the site now shows
+`hello@podarticle.com` everywhere. Mail to it forwards to the Gmail inbox, so replies
+still need the Gmail "Send mail as" identity described below to go out on-brand.
+
+The steps below are kept as the record of how it was set up, and for whoever moves this
+to a real mailbox later.
 
 ### Option A — ImprovMX forwarding (free, ~10 minutes) — recommended to start
 
@@ -177,17 +180,9 @@ MX records for you and verifies the domain.
 **Recommendation:** Option A now, Option B when there is a reason to pay for it.
 Moving from A to B later is just replacing the MX records.
 
-### Then swap the strings
+### Then swap the strings — done
 
-Once mail to `hello@podarticle.com` demonstrably arrives, replace the address everywhere
-in one commit:
-
-```sh
-grep -rl 'podarticle@gmail\.com' public/ | xargs sed -i 's/podarticle@gmail\.com/hello@podarticle.com/g'
-grep -rn 'podarticle@gmail\.com' .   # should print nothing
-```
-
-That covers all of:
+The address was swapped across:
 
 - `public/messages.js` — `SUPPORT_EMAIL`, the address used by every error message
 - `public/index.html`, `public/pricing.html`, `public/episode.html` — footer
@@ -195,8 +190,8 @@ That covers all of:
 - `public/episodes/jared-isaacman-moon-base.html` — the one seed page with its own
   footer links
 
-Drop the comment above `SUPPORT_EMAIL` in `public/messages.js` at the same time, since it
-only exists to explain why the address was still Gmail.
+`SUPPORT_EMAIL` is the single source for the error-message surfaces; the mailto: links in
+the static footers are literal and have to be changed by hand alongside it.
 
-Keep the Gmail address forwarding for a while afterwards — old pages stay in Google's
-index, and people mail addresses they saw months ago.
+The Gmail address stays live rather than being retired — old pages stay in Google's index,
+and people mail addresses they saw months ago.

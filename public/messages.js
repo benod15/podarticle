@@ -6,11 +6,8 @@
 // Every surface renders from this map instead, so each failure says what happened in
 // plain English and what to do next.
 (function () {
-  // Still the Gmail address on purpose: hello@podarticle.com is the address we want on
-  // the brand, but pointing readers at a mailbox that does not receive yet is worse than
-  // an off-brand one that does. Swap this and the mailto: links in the HTML together,
-  // once forwarding is live — docs/brand-ops.md has the setup and the exact swap.
-  var SUPPORT_EMAIL = 'podarticle@gmail.com';
+  // Forwards to the Gmail inbox via ImprovMX — see docs/brand-ops.md.
+  var SUPPORT_EMAIL = 'hello@podarticle.com';
 
   // action: { type: 'signin' } | { type: 'link', href, label }
   var COPY = {
