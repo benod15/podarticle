@@ -402,7 +402,17 @@
         const r = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
         const data = await r.json().catch(() => ({}));
         if (seq !== searchSeq) return; // a newer keystroke owns the box
-        renderResults(r.ok ? data.results || [] : [], query);
+        if (!r.ok) {
+          // Upstream failure (quota, outage) — say so instead of "no results".
+          box.replaceChildren();
+          const p = document.createElement('p');
+          p.className = 'yt-results-empty';
+          p.textContent = 'Search is taking a breather — the video data provider is at its limit. Try again in a bit.';
+          box.appendChild(p);
+          box.hidden = false;
+          return;
+        }
+        renderResults(data.results || [], query);
       } catch {
         if (seq === searchSeq) renderResults([], query);
       }
