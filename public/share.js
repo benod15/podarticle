@@ -131,6 +131,11 @@
     ta.className = 'share-compose';
     ta.rows = payload.sec != null ? 6 : 4;
     ta.value = buildPost(payload);
+    // Grow the box to fit the draft so no line hides behind a scrollbar.
+    function autosize() {
+      ta.style.height = 'auto';
+      ta.style.height = ta.scrollHeight + 4 + 'px';
+    }
 
     var actions = document.createElement('div');
     actions.className = 'share-menu-actions';
@@ -155,9 +160,11 @@
 
     function syncX() {
       x.href = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(ta.value);
+      autosize();
     }
     ta.addEventListener('input', syncX);
     syncX();
+    setTimeout(autosize, 0);
 
     actions.append(x, copy, sms);
     menu.append(label, ta, actions);
