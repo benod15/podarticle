@@ -585,6 +585,9 @@
   // Hub pages (sports.html etc.) pin the grid to one category; the homepage
   // starts on 'all' and lets the tabs switch.
   let activeCategory = grid.getAttribute('data-fixed-category') || 'all';
+  // Three states for the empty grid: still loading, load failed, loaded.
+  let libraryLoaded = false;
+  let libraryFailed = false;
 
   // Category tabs (All / Sports / Tech / Finance / Politics). Static seed cards carry
   // data-category; DB episodes bring it from the API.
@@ -596,12 +599,6 @@
     tabs.querySelectorAll('.library-tab').forEach((t) => t.classList.toggle('active', t === tab));
     render();
   });
-
-  function matchesQuery(item, q) {
-    if (!q) return true;
-    const hay = `${item.show} ${item.title} ${item.summary}`.toLowerCase();
-    return q.toLowerCase().split(/\s+/).every((w) => hay.includes(w));
-  }
 
   function sortLibrary(items, mode) {
     const arr = items.slice();
@@ -664,28 +661,43 @@
   }
 
   function render() {
-    const q = searchInput?.value || '';
     const mode = sortSelect?.value || 'newest';
     const pool = (mode === 'mine' ? library.filter((i) => i.mine) : library)
       .filter((i) => activeCategory === 'all' || (i.category || 'general') === activeCategory);
-    const visible = sortLibrary(pool.filter((i) => matchesQuery(i, q)), mode);
+    const visible = sortLibrary(pool, mode);
     grid.innerHTML = '';
     for (const item of visible) grid.appendChild(renderCard(item));
     if (!visible.length) {
       const p = document.createElement('p');
       p.className = 'library-empty';
-      p.textContent =
-        mode === 'mine'
-          ? 'Nothing here yet — paste a podcast link above and your episode maps will collect here.'
-          : q
-            ? 'No episodes match that search yet.'
-            : 'Nothing in this category yet — new maps land here as they are added.';
+      if (mode === 'mine') {
+        p.textContent = 'Nothing here yet — search YouTube above and your episode maps will collect here.';
+      } else if (!libraryLoaded && !libraryFailed) {
+        p.textContent = 'Loading the episode library…';
+      } else if (libraryFailed) {
+        p.textContent = 'Couldn\u2019t load the full library — check your connection and refresh.';
+      } else {
+        p.textContent = 'Nothing in this category yet — new maps land here as they are added.';
+      }
       grid.appendChild(p);
     }
   }
 
-  searchInput?.addEventListener('input', render);
   sortSelect?.addEventListener('change', render);
+
+  // The box in the library header is a YouTube search, full stop — same search
+  // as the hero box (visitors expect one search, not a shelf filter). Enter
+  // hands the query to the main search and brings the results into view.
+  searchInput?.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter') return;
+    const q = searchInput.value.trim();
+    if (!q) return;
+    e.preventDefault();
+    searchInput.value = '';
+    if (urlInput) urlInput.value = q;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    searchYouTube(q);
+  });
 
   // The "Your library" sort option exists only while the reader has personal maps.
   function syncMineOption(hasMine) {
@@ -706,11 +718,18 @@
   // homepage stays the curated seed for everyone, personal maps sit on top for their owner.
   // Rebuilt from the static seed each time so signing out drops the personal half.
   async function loadLibrary() {
-    const session = await window.PAAuth?.getSession().catch(() => null);
-    const headers = session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {};
-    const r = await fetch('/api/episodes', { headers });
-    if (!r.ok) return;
-    const data = await r.json();
+    let data;
+    try {
+      const session = await window.PAAuth?.getSession().catch(() => null);
+      const headers = session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {};
+      const r = await fetch('/api/episodes', { headers });
+      if (!r.ok) throw new Error('episodes ' + r.status);
+      data = await r.json();
+    } catch {
+      libraryFailed = true;
+      render();
+      return;
+    }
 
     library = staticCards.slice();
     const byId = new Map(library.map((i) => [i.video_id, i]));
@@ -730,6 +749,7 @@
     merge(data.mine, true);
 
     syncMineOption(library.some((i) => i.mine));
+    libraryLoaded = true;
     render();
   }
 
