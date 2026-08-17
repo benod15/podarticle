@@ -15,6 +15,7 @@
   var player = null;
   var playerReady = false;
   var pendingSeek = null;
+  var targetSec = 0;
   var apiFailed = false;
   var engaged = false;
   var lastOrigin = null;
@@ -62,8 +63,11 @@
   }
 
   // ---------- Mounting ----------
-  // Replaces the hero thumbnail link with a poster that upgrades into a real player on
-  // first play. The poster keeps the page light until someone actually wants to watch.
+  // Replaces the hero thumbnail link with a poster, and creates the player right away,
+  // CUED behind it. Phones block autoplay without a tap, so a lazily-created player
+  // left the first timestamp click dead (the video just sat cued behind a red YouTube
+  // play button). With the player already alive, the first click seeks + plays inside
+  // the tap gesture itself — which every browser allows, with sound.
   function mountPlayer() {
     var hero = document.querySelector('.ep-hero');
     if (!hero || hero.dataset.ytMounted) return;
@@ -90,12 +94,23 @@
     posterImg.src = img ? img.src : window.PAThumb.url(id);
     posterImg.alt = img ? img.alt : '';
 
-    shell.querySelector('[data-yt-poster]').addEventListener('click', function () { seek(0); });
+    // The poster plays whatever the visitor came for — the shared moment on a
+    // deep link, the start of the episode otherwise.
+    shell.querySelector('[data-yt-poster]').addEventListener('click', function () { seek(targetSec || 0); });
 
     hero.replaceWith(shell);
     mount = shell;
     addBackButton();
-    loadApi();
+
+    var deepT = parseInt(new URLSearchParams(window.location.search).get('t') || '', 10);
+    var hasDeep = Number.isFinite(deepT) && deepT > 0;
+    if (hasDeep) {
+      targetSec = deepT;
+      pendingSeek = deepT;
+    }
+    // Deep links: muted autoplay (the only kind allowed without a tap) + sound pill.
+    // Normal visits: cued unmuted, waiting for the first real tap.
+    createPlayer(hasDeep ? deepT : 0, hasDeep);
   }
 
   // ---------- Tap for sound ----------
@@ -163,10 +178,11 @@
           height: '100%',
           playerVars: {
             start: startSeconds || 0,
-            autoplay: 1,
             // Browsers only allow autoplay when muted (or after a user gesture).
-            // Deep links arrive without a gesture, so they start muted — one tap
-            // on the player's volume unmutes. In-page clicks keep sound on.
+            // Deep links arrive without a gesture, so they autoplay muted — one tap
+            // unmutes. Normal visits cue silently and wait for a tap, which then
+            // plays with sound inside the gesture.
+            autoplay: muted ? 1 : 0,
             mute: muted ? 1 : 0,
             rel: 0,
             playsinline: 1,
@@ -175,15 +191,21 @@
           events: {
             onReady: function (e) {
               playerReady = true;
-              mount.classList.add('is-playing');
               // playerVars.start is unreliable alongside autoplay — the player often
               // ignores it and plays from 0:00, which made the first timestamp click
               // on a fresh page appear to do nothing. Always seek explicitly; a
               // same-spot seek when start DID work is harmless.
-              if (pendingSeek != null) e.target.seekTo(pendingSeek, true);
-              pendingSeek = null;
-              e.target.playVideo();
+              if (pendingSeek != null) {
+                e.target.seekTo(pendingSeek, true);
+                pendingSeek = null;
+                if (muted) e.target.playVideo();
+              }
               if (muted) armTapForSound();
+            },
+            onStateChange: function (e) {
+              // The poster stays until the video is genuinely playing — a cued or
+              // blocked player never shows YouTube's red-button dead state.
+              if (e.data === 1) mount.classList.add('is-playing');
             },
           },
         });
@@ -195,19 +217,20 @@
     );
   }
 
-  // Seek the in-page player to `seconds`, creating it on first use.
-  // opts.muted: start muted so autoplay survives browser policy (shared links).
+  // Seek the in-page player to `seconds`. The player is created at page load, so a
+  // timestamp click is a gesture acting on a live player — seek + play just works.
   // Returns false when no player is available, so callers can fall back to YouTube.
   function seek(seconds, opts) {
     if (!mount || apiFailed) return false;
     seconds = Math.max(0, Math.floor(seconds || 0));
     engaged = true;
+    targetSec = seconds;
     if (playerReady && player && typeof player.seekTo === 'function') {
       player.seekTo(seconds, true);
       player.playVideo();
     } else {
       pendingSeek = seconds;
-      createPlayer(seconds, !!(opts && opts.muted));
+      createPlayer(seconds, !!(opts && opts.muted)); // safety net; mount already did
     }
     reveal();
     updateBackButton();
