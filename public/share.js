@@ -167,7 +167,7 @@
     sms.textContent = 'Text it';
 
     function syncX() {
-      x.href = 'https://x.com/intent/post?text=' + encodeURIComponent(ta.value);
+      x.href = 'https://x.com/intent/tweet?text=' + encodeURIComponent(ta.value);
       autosize();
     }
     ta.addEventListener('input', syncX);

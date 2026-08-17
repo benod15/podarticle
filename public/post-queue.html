@@ -133,7 +133,7 @@
           post.target = '_blank';
           post.rel = 'noopener';
           function sync() {
-            post.href = 'https://x.com/intent/post?text=' + encodeURIComponent(ta.value);
+            post.href = 'https://x.com/intent/tweet?text=' + encodeURIComponent(ta.value);
           }
           ta.addEventListener('input', sync);
           sync();
