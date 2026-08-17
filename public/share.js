@@ -47,8 +47,8 @@
     var analysis = data.analysis || {};
     var title = (meta.title || 'Episode') + ' — PodArticle';
     var desc = (analysis.summary || 'Every section, timestamped. Watch only what matters to you.').slice(0, 200);
-    // hqdefault always exists; maxresdefault 404s on some uploads = no card at all.
-    var img = 'https://i.ytimg.com/vi/' + data.video_id + '/hqdefault.jpg';
+    // Same source the server-side card uses (api/og-image.js) — one thumbnail pipeline.
+    var img = 'https://podarticle.com/api/og-image?vid=' + data.video_id;
     var url = pageUrl(data.video_id);
 
     setMeta('property', 'og:title', title);

@@ -116,9 +116,9 @@ export default async function handler(req, res) {
 
   const title = `${ep.title || 'Episode'} — PodArticle`;
   const description = String(ep.analysis?.summary || 'Every section, timestamped. Watch only what matters to you.').slice(0, 200);
-  // hqdefault always exists (maxresdefault 404s on some uploads, and a 404
-  // image means no card at all).
-  const image = `https://i.ytimg.com/vi/${vid}/hqdefault.jpg`;
+  // Served from our own domain (api/og-image.js) — X's image proxy failing to
+  // fetch a third-party host once means a broken card cached against the URL.
+  const image = `https://podarticle.com/api/og-image?vid=${vid}`;
   const url = `https://podarticle.com/e/${vid}`;
 
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
