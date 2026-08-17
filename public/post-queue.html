@@ -63,7 +63,7 @@
   <main class="pq-wrap">
     <p class="eyebrow">Internal</p>
     <h1 style="margin-top:0;">Post queue</h1>
-    <p style="color:var(--color-text-faint);">Every row is ready to fire — tap Post on X, press Post, next. Edit only if you want. Posted rows dim.</p>
+    <p style="color:var(--color-text-faint);">Every row leads with that episode's #1 ranked moment and a link that plays from that exact second. Tap Post on X, press Post, next. Edit only if you want. Posted rows dim.</p>
     <p class="pq-progress" id="pq-progress"></p>
     <div id="pq-list"><p style="color:var(--color-text-faint);">Loading…</p></div>
     <p class="pq-tip">
@@ -95,11 +95,31 @@
       return '';
     }
 
+    function fmtTs(sec) {
+      sec = Math.max(0, Math.floor(sec || 0));
+      var m = Math.floor(sec / 60), s = sec % 60, h = Math.floor(m / 60);
+      return h
+        ? h + ':' + String(m % 60).padStart(2, '0') + ':' + String(s).padStart(2, '0')
+        : m + ':' + String(s).padStart(2, '0');
+    }
+
+    // Posts lead with the episode's #1 ranked moment, not the episode title —
+    // a specific hook plus a deep link that plays from that exact second.
     function buildPost(ep) {
+      var tag = hashtagFor(ep);
+      var m = ep.top_moment;
+      if (m && m.seconds != null) {
+        var link = 'https://podarticle.com/e/' + ep.video_id + '?t=' + m.seconds;
+        var mTitle = (m.title || '').replace(/\s+/g, ' ').trim();
+        var desc = (m.description || '').replace(/\s+/g, ' ').trim();
+        if (desc.length > 90) desc = desc.slice(0, 87).replace(/\s+\S*$/, '') + '…';
+        return '"' + mTitle + '" — ' + desc + '\n\n' +
+          'The #1 moment from this one — starts playing at ' + fmtTs(m.seconds) + ' when you open it:\n' + link +
+          (tag ? '\n\n' + tag : '');
+      }
       var link = 'https://podarticle.com/e/' + ep.video_id;
       var title = (ep.title || '').replace(/\s+/g, ' ').trim();
       if (title.length > 150) title = title.slice(0, 147).trim() + '…';
-      var tag = hashtagFor(ep);
       return 'New episode map: "' + title + '"\n\n' +
         'Every section timestamped — start at the part you care about:\n' + link +
         (tag ? '\n\n' + tag : '');

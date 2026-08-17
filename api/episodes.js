@@ -30,17 +30,22 @@ export default async function handler(req, res) {
     });
   }
 
-  const toCard = (e) => ({
-    video_id: e.video_id,
-    slug: e.slug,
-    title: e.title,
-    show_name: e.show_name,
-    published_at: e.published_at,
-    duration_sec: e.duration_sec,
-    category: e.category || 'general',
-    summary: e.analysis || '',
-    created_at: e.created_at,
-  });
+  const toCard = (e) => {
+    // The rank-1 Top 5 moment powers ready-made posts (queue, share prompts).
+    const top = Array.isArray(e.top5) ? e.top5.find((t) => t.rank === 1) || e.top5[0] : null;
+    return {
+      video_id: e.video_id,
+      slug: e.slug,
+      title: e.title,
+      show_name: e.show_name,
+      published_at: e.published_at,
+      duration_sec: e.duration_sec,
+      category: e.category || 'general',
+      summary: e.analysis || '',
+      top_moment: top ? { title: top.title, seconds: top.seconds, description: top.description } : null,
+      created_at: e.created_at,
+    };
+  };
 
   const { user } = req.headers.authorization ? await getUser(req) : {};
   const [episodes, mine] = await Promise.all([
