@@ -132,10 +132,18 @@
     }
     // The first tap unmutes in the capture phase but does NOT consume the
     // gesture — a tap on a timestamp also seeks, so nobody ever needs two
-    // taps to get what they pressed. The pill itself is pass-through: taps
-    // land on the player (or poster) beneath it.
+    // taps to get what they pressed. The pill itself must swallow its taps:
+    // it sits over YouTube's title bar, and a pass-through tap there follows
+    // the embed's link out to youtube.com.
     function onFirstTap() { unmuteNow(); }
-    soundPill.style.pointerEvents = 'none';
+    soundPill.addEventListener('pointerdown', function (e) {
+      e.stopPropagation();
+      unmuteNow();
+    });
+    soundPill.addEventListener('click', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    });
     document.addEventListener('pointerdown', onFirstTap, true);
     // Unmuted via YouTube's own controls instead — drop the pill.
     soundPoll = setInterval(function () {
