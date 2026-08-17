@@ -17,26 +17,28 @@ export default async function handler(req, res) {
   }
 
   // Prefer maxres (1280x720 — the size summary_large_image is designed for);
-  // fall back to hqdefault, which exists for every upload.
+  // hqdefault exists for every upload. Race them in parallel: X's crawler gives
+  // up after a few seconds and caches the failure for days, so cold-start
+  // latency (two sequential fetches) was costing us cards.
   const candidates = [
     `https://i.ytimg.com/vi/${vid}/maxresdefault.jpg`,
     `https://i.ytimg.com/vi/${vid}/hqdefault.jpg`,
   ];
 
-  for (const url of candidates) {
-    try {
-      const r = await fetch(url);
-      if (!r.ok) continue;
-      const buf = Buffer.from(await r.arrayBuffer());
-      res.setHeader('Content-Type', 'image/jpeg');
-      res.setHeader('Content-Length', String(buf.length));
-      // Cards change never; let X's proxy and the CDN hold it.
-      res.setHeader('Cache-Control', 'public, max-age=86400, s-maxage=604800, immutable');
-      return res.status(200).send(buf);
-    } catch {
-      // try the next candidate
-    }
-  }
+  const fetchOk = async (url) => {
+    const r = await fetch(url);
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    return Buffer.from(await r.arrayBuffer());
+  };
 
-  return res.status(502).json({ error: 'Thumbnail unavailable', code: 'UNAVAILABLE' });
+  try {
+    const buf = await Promise.any(candidates.map(fetchOk));
+    res.setHeader('Content-Type', 'image/jpeg');
+    res.setHeader('Content-Length', String(buf.length));
+    // Cards change never; let X's proxy and the CDN hold it.
+    res.setHeader('Cache-Control', 'public, max-age=86400, s-maxage=604800, immutable');
+    return res.status(200).send(buf);
+  } catch {
+    return res.status(502).json({ error: 'Thumbnail unavailable', code: 'UNAVAILABLE' });
+  }
 }
