@@ -8,7 +8,7 @@
 // Failure responses always carry a `code`. That code is the contract the client branches
 // on; the reader-facing sentence for it lives in public/messages.js. The `error` field
 // beside it is a short diagnostic label for logs and is never rendered.
-import { extractVideoId, fetchMetadata, parseChapters, fetchTranscript, transcriptToLines, TranscriptUnavailable } from '../lib/youtube.js';
+import { extractVideoId, fetchMetadata, parseChapters, fetchTranscript, transcriptToLines, transcriptCoverageSec, TranscriptUnavailable } from '../lib/youtube.js';
 import { analyzeWithGemini } from '../lib/gemini.js';
 import { getEpisodeByVideoId, saveEpisode, addToLibrary, slugify } from '../lib/db.js';
 import { getUser, checkAllowance, recordUsage, FREE_LIMIT } from '../lib/auth.js';
@@ -86,6 +86,18 @@ export default async function handler(req, res) {
     const chapters = parseChapters(metadata.description);
 
     const segments = await fetchTranscript(videoId, supadataKey);
+
+    // Coverage guard: if the caption track stops long before the episode does
+    // (captions still generating, truncated upload), a map built on it is garbage.
+    // Fail with the friendly "too new" error instead of saving a fake map.
+    if (metadata.durationSec) {
+      const coverage = transcriptCoverageSec(segments);
+      if (coverage < metadata.durationSec * 0.6) {
+        console.warn('analyze: thin transcript', videoId, `coverage=${coverage}s duration=${metadata.durationSec}s`);
+        throw new TranscriptUnavailable('Transcript incomplete');
+      }
+    }
+
     const transcriptLines = transcriptToLines(segments);
 
     const analysis = await analyzeWithGemini({
