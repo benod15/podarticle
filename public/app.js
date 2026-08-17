@@ -677,7 +677,9 @@
       p.textContent =
         mode === 'mine'
           ? 'Nothing here yet — paste a podcast link above and your episode maps will collect here.'
-          : 'No episodes match that search yet.';
+          : q
+            ? 'No episodes match that search yet.'
+            : 'Nothing in this category yet — new maps land here as they are added.';
       grid.appendChild(p);
     }
   }
