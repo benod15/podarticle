@@ -902,3 +902,31 @@ details[open] .chapter-chevron { transform: rotate(180deg); }
   border-color: var(--color-primary-strong);
   color: #fff;
 }
+
+/* ---------- Tap for sound (deep-link muted autoplay) ---------- */
+.tap-for-sound {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 9px 16px;
+  border: none;
+  border-radius: 999px;
+  background: rgba(18, 18, 18, 0.85);
+  color: #fff;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  animation: tapForSoundPulse 1.6s ease-in-out infinite;
+}
+.tap-for-sound svg { width: 17px; height: 17px; }
+@keyframes tapForSoundPulse {
+  0%, 100% { transform: translateX(-50%) scale(1); }
+  50% { transform: translateX(-50%) scale(1.06); }
+}

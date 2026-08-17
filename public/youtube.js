@@ -98,6 +98,47 @@
     loadApi();
   }
 
+  // ---------- Tap for sound ----------
+  // Muted autoplay is the only kind browsers allow from a cold link. So a deep
+  // link starts muted and arms this: a pulsing pill over the video, and the
+  // first tap ANYWHERE on the page unmutes. One tap to sound — the closest the
+  // browser autoplay policies let anyone get to unmuted-off-the-rip.
+  var soundPill = null;
+  var soundPoll = null;
+
+  function armTapForSound() {
+    if (!mount || soundPill) return;
+    soundPill = document.createElement('button');
+    soundPill.type = 'button';
+    soundPill.className = 'tap-for-sound';
+    soundPill.innerHTML =
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+      '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19" fill="currentColor" stroke="none"/>' +
+      '<path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9.5 9.5 0 0 1 0 13"/></svg>' +
+      '<span>Tap for sound</span>';
+    mount.appendChild(soundPill);
+
+    function disarm() {
+      if (soundPill) { soundPill.remove(); soundPill = null; }
+      document.removeEventListener('pointerdown', onFirstTap, true);
+      if (soundPoll) { clearInterval(soundPoll); soundPoll = null; }
+    }
+    function unmuteNow() {
+      if (player && typeof player.unMute === 'function') {
+        player.unMute();
+        if (typeof player.setVolume === 'function') player.setVolume(100);
+      }
+      disarm();
+    }
+    function onFirstTap() { unmuteNow(); }
+    soundPill.addEventListener('click', function (e) { e.stopPropagation(); unmuteNow(); });
+    document.addEventListener('pointerdown', onFirstTap, true);
+    // Unmuted via YouTube's own controls instead — drop the pill.
+    soundPoll = setInterval(function () {
+      if (player && typeof player.isMuted === 'function' && !player.isMuted()) disarm();
+    }, 800);
+  }
+
   function createPlayer(startSeconds, muted) {
     var frame = mount && mount.querySelector('[data-yt-frame]');
     if (!frame || player) return;
@@ -127,6 +168,7 @@
               if (pendingSeek != null && pendingSeek !== startSeconds) e.target.seekTo(pendingSeek, true);
               pendingSeek = null;
               e.target.playVideo();
+              if (muted) armTapForSound();
             },
           },
         });
