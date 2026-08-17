@@ -164,8 +164,11 @@
             onReady: function (e) {
               playerReady = true;
               mount.classList.add('is-playing');
-              // A click may have landed while the API was still loading.
-              if (pendingSeek != null && pendingSeek !== startSeconds) e.target.seekTo(pendingSeek, true);
+              // playerVars.start is unreliable alongside autoplay — the player often
+              // ignores it and plays from 0:00, which made the first timestamp click
+              // on a fresh page appear to do nothing. Always seek explicitly; a
+              // same-spot seek when start DID work is harmless.
+              if (pendingSeek != null) e.target.seekTo(pendingSeek, true);
               pendingSeek = null;
               e.target.playVideo();
               if (muted) armTapForSound();
