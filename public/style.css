@@ -876,3 +876,29 @@ details[open] .chapter-chevron { transform: rotate(180deg); }
   font-weight: 600;
 }
 .share-menu-primary:hover { filter: brightness(1.08); }
+
+/* ---------- Library category tabs ---------- */
+.library-tabs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin: 14px 0 4px;
+}
+.library-tab {
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 500;
+  padding: 7px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border, rgba(0,0,0,.12));
+  background: transparent;
+  color: var(--color-text-faint);
+  cursor: pointer;
+  transition: background .15s, color .15s, border-color .15s;
+}
+.library-tab:hover { border-color: var(--color-primary-strong); color: var(--color-text); }
+.library-tab.active {
+  background: var(--color-primary-strong);
+  border-color: var(--color-primary-strong);
+  color: #fff;
+}

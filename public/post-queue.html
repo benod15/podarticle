@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Post queue — PodArticle</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="thumb.js"></script>
+  <style>
+    .pq-wrap { max-width: 720px; margin: 0 auto; padding: 3rem 1.25rem 5rem; }
+    .pq-item {
+      border: 1px solid var(--color-border, rgba(0,0,0,.12));
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 14px;
+      background: var(--color-surface, #fff);
+    }
+    .pq-head { display: flex; gap: 12px; align-items: center; margin-bottom: 10px; }
+    .pq-head img { width: 84px; border-radius: 8px; flex: none; }
+    .pq-title { font-size: 14.5px; font-weight: 600; margin: 0; }
+    .pq-meta { font-size: 12.5px; color: var(--color-text-faint); margin: 2px 0 0; }
+    .pq-text {
+      width: 100%; font: inherit; font-size: 14px; line-height: 1.45;
+      border: 1px solid var(--color-border, rgba(0,0,0,.12)); border-radius: 10px;
+      padding: 10px 12px; margin: 0 0 10px; resize: vertical;
+      color: var(--color-text); background: var(--color-bg, #fff);
+    }
+    .pq-actions { display: flex; gap: 8px; }
+    .pq-posted { opacity: .45; }
+    .pq-posted .pq-post { pointer-events: none; }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="site-header-inner">
+      <a class="brand-mark" href="index.html" aria-label="PodArticle home">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"/><polygon points="10,8 16,12 10,16" fill="currentColor" stroke="none"/>
+        </svg>
+        <span>PodArticle</span>
+      </a>
+      <nav class="site-nav" aria-label="Main navigation">
+        <a href="index.html#feed">Episode library</a>
+        <button class="theme-toggle" data-theme-toggle aria-label="Switch to dark mode"></button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="pq-wrap">
+    <p class="eyebrow">Internal</p>
+    <h1 style="margin-top:0;">Post queue</h1>
+    <p style="color:var(--color-text-faint);">Newest public maps, each with a pre-written post in the share format — thumbnail card rides the link automatically. Edit, then tap Post on X. Posted items dim so you can work top to bottom.</p>
+    <div id="pq-list"><p style="color:var(--color-text-faint);">Loading…</p></div>
+  </main>
+
+  <script>
+  (function () {
+    var list = document.getElementById('pq-list');
+    var POSTED_KEY = 'pa_posted';
+    function posted() {
+      try { return JSON.parse(localStorage.getItem(POSTED_KEY) || '{}'); } catch { return {}; }
+    }
+    function markPosted(vid) {
+      var p = posted(); p[vid] = Date.now();
+      try { localStorage.setItem(POSTED_KEY, JSON.stringify(p)); } catch {}
+    }
+
+    function buildPost(ep) {
+      var link = 'https://podarticle.com/e/' + ep.video_id;
+      var title = (ep.title || '').replace(/\s+/g, ' ').trim();
+      if (title.length > 150) title = title.slice(0, 147).trim() + '…';
+      return 'New episode map: "' + title + '"\n\n' +
+        'Every section timestamped — start at the part you care about:\n' + link;
+    }
+
+    fetch('/api/episodes')
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        var eps = (data.episodes || []).slice(0, 40);
+        list.replaceChildren();
+        if (!eps.length) {
+          list.innerHTML = '<p>No public episodes yet — run a seed batch first.</p>';
+          return;
+        }
+        var done = posted();
+        eps.forEach(function (ep) {
+          var item = document.createElement('div');
+          item.className = 'pq-item' + (done[ep.video_id] ? ' pq-posted' : '');
+
+          var head = document.createElement('div');
+          head.className = 'pq-head';
+          head.innerHTML = '<img alt=""><div><p class="pq-title"></p><p class="pq-meta"></p></div>';
+          window.PAThumb.bind(head.querySelector('img')).src =
+            'https://i.ytimg.com/vi/' + ep.video_id + '/hqdefault.jpg';
+          head.querySelector('.pq-title').textContent = ep.title;
+          head.querySelector('.pq-meta').textContent =
+            [ep.show_name, ep.category, ep.duration_sec ? Math.round(ep.duration_sec / 60) + ' min' : null]
+              .filter(Boolean).join(' · ');
+
+          var ta = document.createElement('textarea');
+          ta.className = 'pq-text';
+          ta.rows = 4;
+          ta.value = buildPost(ep);
+
+          var actions = document.createElement('div');
+          actions.className = 'pq-actions';
+          var post = document.createElement('a');
+          post.className = 'share-menu-item share-menu-primary pq-post';
+          post.textContent = 'Post on X';
+          post.target = '_blank';
+          post.rel = 'noopener';
+          function sync() {
+            post.href = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(ta.value);
+          }
+          ta.addEventListener('input', sync);
+          sync();
+          post.addEventListener('click', function () {
+            markPosted(ep.video_id);
+            item.classList.add('pq-posted');
+          });
+
+          var open = document.createElement('a');
+          open.className = 'share-menu-item';
+          open.textContent = 'Open map';
+          open.href = '/e/' + ep.video_id;
+          open.target = '_blank';
+          open.rel = 'noopener';
+
+          actions.append(post, open);
+          item.append(head, ta, actions);
+          list.appendChild(item);
+        });
+      })
+      .catch(function () {
+        list.innerHTML = '<p>Could not load episodes — try refreshing.</p>';
+      });
+  })();
+  </script>
+</body>
+</html>

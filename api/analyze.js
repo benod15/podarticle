@@ -11,6 +11,7 @@
 import { extractVideoId, fetchMetadata, parseChapters, fetchTranscript, transcriptToLines, transcriptCoverageSec, TranscriptUnavailable } from '../lib/youtube.js';
 import { analyzeWithGemini } from '../lib/gemini.js';
 import { getEpisodeByVideoId, saveEpisode, addToLibrary, slugify } from '../lib/db.js';
+import { categorize } from '../lib/classify.js';
 import { getUser, checkAllowance, recordUsage, FREE_LIMIT } from '../lib/auth.js';
 
 export default async function handler(req, res) {
@@ -133,6 +134,7 @@ export default async function handler(req, res) {
       analysis,
       userId: user.id,
       visibility: 'private',
+      category: categorize({ title: metadata.title, showName: metadata.author, analysis }),
     });
     if (saved?.slug) slug = saved.slug;
     await addToLibrary(user.id, videoId);

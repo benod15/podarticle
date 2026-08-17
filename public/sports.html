@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sports Podcast Episode Maps — PodArticle</title>
+  <meta name="description" content="NFL, fantasy football, NBA, college ball and more — every episode broken into timestamped sections that play right here. Skip the filler, keep the takes.">
+  <link rel="canonical" href="https://podarticle.com/sports.html">
+  <meta property="og:title" content="Sports Podcast Episode Maps — PodArticle">
+  <meta property="og:description" content="NFL, fantasy football, NBA, college ball and more — every episode broken into timestamped sections that play right here. Skip the filler, keep the takes.">
+  <meta property="og:url" content="https://podarticle.com/sports.html">
+  <meta property="og:type" content="website">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="thumb.js"></script>
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="site-header-inner">
+      <a class="brand-mark" href="index.html" aria-label="PodArticle home">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"/><polygon points="10,8 16,12 10,16" fill="currentColor" stroke="none"/>
+        </svg>
+        <span>PodArticle</span>
+      </a>
+      <nav class="site-nav" aria-label="Main navigation">
+        <a href="index.html#feed">Episode library</a>
+        <a href="how-it-works.html">How it works</a>
+        <span data-auth-slot></span>
+        <button class="theme-toggle" data-theme-toggle aria-label="Switch to dark mode"></button>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="feed wrap-wide" style="padding-top:3rem;">
+      <div class="section-head" style="display:block;max-width:720px;">
+        <p class="eyebrow">Category</p>
+        <h1 style="margin:0 0 0.5rem;">Sports episodes, mapped</h1>
+        <p style="color:var(--color-text-faint);margin:0 0 1.5rem;">NFL, fantasy football, NBA, college ball and more — every episode broken into timestamped sections that play right here. Skip the filler, keep the takes.</p>
+      </div>
+      <div class="article-grid" data-library-grid data-fixed-category="sports"></div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap-wide footer-inner">
+      <a class="brand-mark" href="index.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"/><polygon points="10,8 16,12 10,16" fill="currentColor" stroke="none"/>
+        </svg>
+        <span>PodArticle</span>
+      </a>
+      <nav class="footer-links" aria-label="Footer">
+        <a href="index.html#feed">Episode library</a>
+        <a href="pricing.html">Pricing</a>
+        <a href="mailto:support@podarticle.com">Contact</a>
+      </nav>
+      <p class="footer-copy">&copy; 2026 PodArticle.</p>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="messages.js"></script>
+  <script src="theme.js" defer></script>
+  <script src="auth.js" defer></script>
+  <script src="app.js" defer></script>
+</body>
+</html>

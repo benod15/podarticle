@@ -573,6 +573,7 @@
   const staticCards = Array.from(grid.querySelectorAll('.article-card')).map((a) => ({
     el: a,
     href: a.getAttribute('href'),
+    category: a.getAttribute('data-category') || 'general',
     show: (a.querySelector('.article-card-eyebrow')?.textContent || '').trim(),
     title: (a.querySelector('h3')?.textContent || '').trim(),
     summary: (a.querySelector('p')?.textContent || '').trim(),
@@ -581,6 +582,20 @@
   }));
 
   let library = staticCards.slice();
+  // Hub pages (sports.html etc.) pin the grid to one category; the homepage
+  // starts on 'all' and lets the tabs switch.
+  let activeCategory = grid.getAttribute('data-fixed-category') || 'all';
+
+  // Category tabs (All / Sports / Tech / Finance / Politics). Static seed cards carry
+  // data-category; DB episodes bring it from the API.
+  const tabs = document.querySelector('[data-library-tabs]');
+  tabs?.addEventListener('click', (e) => {
+    const tab = e.target.closest('[data-category]');
+    if (!tab) return;
+    activeCategory = tab.getAttribute('data-category');
+    tabs.querySelectorAll('.library-tab').forEach((t) => t.classList.toggle('active', t === tab));
+    render();
+  });
 
   function matchesQuery(item, q) {
     if (!q) return true;
@@ -628,8 +643,9 @@
     }
     const a = document.createElement('a');
     a.className = 'article-card';
-    // DB episodes have no static slug page — use the dynamic renderer.
-    a.href = `/episode.html?v=${item.video_id}`;
+    // DB episodes have no static slug page — use the pretty dynamic URL (same
+    // server-rendered card pipeline as shared links).
+    a.href = `/e/${item.video_id}`;
     a.innerHTML = `
       <div class="article-card-thumb">
         <img src="${window.PAThumb.url(item.video_id)}" alt="" loading="lazy">
@@ -650,7 +666,8 @@
   function render() {
     const q = searchInput?.value || '';
     const mode = sortSelect?.value || 'newest';
-    const pool = mode === 'mine' ? library.filter((i) => i.mine) : library;
+    const pool = (mode === 'mine' ? library.filter((i) => i.mine) : library)
+      .filter((i) => activeCategory === 'all' || (i.category || 'general') === activeCategory);
     const visible = sortLibrary(pool.filter((i) => matchesQuery(i, q)), mode);
     grid.innerHTML = '';
     for (const item of visible) grid.appendChild(renderCard(item));
@@ -702,7 +719,7 @@
           if (mine) existing.mine = true;
           continue;
         }
-        const item = { ...ep, show: ep.show_name || '', mine };
+        const item = { ...ep, show: ep.show_name || '', category: ep.category || 'general', mine };
         byId.set(ep.video_id, item);
         library.push(item);
       }

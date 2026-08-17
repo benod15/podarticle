@@ -11,7 +11,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed', code: 'UNAVAILABLE' });
   }
 
-  const { slug } = req.query || {};
+  const { slug, category } = req.query || {};
 
   if (slug) {
     const ep = await getEpisodeBySlug(String(slug));
@@ -37,13 +37,14 @@ export default async function handler(req, res) {
     show_name: e.show_name,
     published_at: e.published_at,
     duration_sec: e.duration_sec,
+    category: e.category || 'general',
     summary: e.analysis || '',
     created_at: e.created_at,
   });
 
   const { user } = req.headers.authorization ? await getUser(req) : {};
   const [episodes, mine] = await Promise.all([
-    listEpisodes(),
+    listEpisodes({ category: category ? String(category) : null }),
     user ? listUserEpisodes(user.id) : Promise.resolve([]),
   ]);
 
