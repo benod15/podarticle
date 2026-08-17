@@ -825,3 +825,24 @@ details[open] .chapter-chevron { transform: rotate(180deg); }
   font-weight: 500;
 }
 .yt-result:hover .yt-result-channel { text-decoration: underline; }
+
+/* ---------- Search suggestions (YouTube/Google-style) ---------- */
+.yt-suggestion {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 11px 14px;
+  background: none;
+  border: 0;
+  border-radius: 10px;
+  font: inherit;
+  font-size: 15px;
+  color: var(--color-text);
+  text-align: left;
+  cursor: pointer;
+}
+.yt-suggestion svg { width: 16px; height: 16px; flex: none; color: var(--color-text-faint); }
+.yt-suggestion:hover,
+.yt-suggestion.active { background: var(--color-cream-dark, rgba(0,0,0,.045)); }
+.yt-result.active { background: var(--color-cream-dark, rgba(0,0,0,.045)); }

@@ -83,6 +83,15 @@ export default async function handler(req, res) {
 
   try {
     const metadata = await fetchMetadata(videoId, supadataKey);
+
+    // Length cap: PodArticle maps podcast episodes, not 10-hour fireplace loops,
+    // ambient streams, or day-long livestreams. Over the cap, a map is both
+    // useless and expensive — decline it before any transcript/AI spend.
+    const MAX_DURATION_SEC = 5 * 3600;
+    if (metadata.durationSec > MAX_DURATION_SEC) {
+      return res.status(422).json({ error: 'Video too long', code: 'VIDEO_TOO_LONG' });
+    }
+
     const chapters = parseChapters(metadata.description);
 
     const segments = await fetchTranscript(videoId, supadataKey);

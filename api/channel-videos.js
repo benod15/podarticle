@@ -2,6 +2,15 @@
 // recent long-form videos, so readers can browse "more from this show" after a
 // search. Channel listing returns bare IDs; we enrich the first 10 with metadata
 // (1 credit each) and return them newest-first.
+// Metadata dates are ISO; the frontend displays `uploaded` verbatim, so format
+// here ("Aug 14, 2026") — relative strings from the search API pass through as-is.
+function formatWhen(iso) {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return String(iso);
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed', code: 'UNAVAILABLE' });
@@ -44,7 +53,7 @@ export default async function handler(req, res) {
             channel: d.channel?.name || '',
             channel_id: d.channel?.id || id,
             duration_sec: durationSec,
-            uploaded: d.uploadDate || d.publishedAt || null,
+            uploaded: formatWhen(d.uploadDate || d.publishedAt),
             thumbnail: `https://i.ytimg.com/vi/${vid}/hqdefault.jpg`,
           };
         } catch {

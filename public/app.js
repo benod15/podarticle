@@ -265,8 +265,9 @@
   urlInput?.addEventListener('blur', tidyLinkInput);
 
   // ---------- In-site YouTube search ----------
-  // Typing words (not a link) searches YouTube through /api/search and offers up to
-  // 8 long-form videos; picking one starts the same analysis a pasted link would.
+  // YouTube/Google-style: typing shows SEARCH SUGGESTIONS (topics, shows, popular
+  // searches). Picking one — or pressing Enter — shows the matching episodes.
+  // Picking an episode starts the same analysis a pasted link would.
   const resultsBox = document.querySelector('[data-yt-results]');
 
   function hideResults() {
@@ -274,6 +275,29 @@
       resultsBox.hidden = true;
       resultsBox.replaceChildren();
     }
+  }
+
+  function renderSuggestions(items, typed) {
+    if (!resultsBox) return;
+    resultsBox.replaceChildren();
+    const list = [];
+    // Always offer the literal query first — suggestions can lag behind reality.
+    if (typed && !items.some((s) => s.toLowerCase() === typed.toLowerCase())) list.push(typed);
+    for (const s of items) if (!list.includes(s)) list.push(s);
+    if (!list.length) return hideResults();
+    for (const s of list.slice(0, 8)) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'yt-suggestion';
+      btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 21l-4.35-4.35M17 10.5a6.5 6.5 0 1 1-13 0 6.5 6.5 0 0 1 13 0z"/></svg><span></span>';
+      btn.querySelector('span').textContent = s;
+      btn.addEventListener('click', () => {
+        if (urlInput) urlInput.value = s;
+        searchYouTube(s);
+      });
+      resultsBox.appendChild(btn);
+    }
+    resultsBox.hidden = false;
   }
 
   function renderResults(items, query) {
@@ -292,24 +316,24 @@
       btn.type = 'button';
       btn.className = 'yt-result';
       const mins = v.duration_sec ? Math.round(v.duration_sec / 60) : null;
-      const when = v.uploaded ? new Date(v.uploaded).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : null;
+      // `uploaded` arrives as display-ready text ("3 days ago") — never re-parse it.
       btn.innerHTML = `
         <img loading="lazy" alt="">
         <span class="yt-result-body">
           <span class="yt-result-title"></span>
           <span class="yt-result-meta"></span>
-          ${v.channel_id ? '<span class="yt-result-channel"></span>' : ''}
+          ${v.channel ? '<span class="yt-result-channel"></span>' : ''}
         </span>`;
       window.PAThumb.bind(btn.querySelector('img')).src = v.thumbnail;
       btn.querySelector('.yt-result-title').textContent = v.title;
       btn.querySelector('.yt-result-meta').textContent =
-        [mins ? `${mins} min` : null, when].filter(Boolean).join(' · ');
+        [mins ? `${mins} min` : null, v.uploaded || null].filter(Boolean).join(' · ');
       const chanEl = btn.querySelector('.yt-result-channel');
       if (chanEl) {
         chanEl.textContent = `More from ${v.channel} →`;
         chanEl.addEventListener('click', (e) => {
           e.stopPropagation();
-          browseChannel(v.channel_id, v.channel);
+          browseChannel(v.channel);
         });
       }
       btn.addEventListener('click', () => {
@@ -323,8 +347,9 @@
   }
 
   // Clicking a channel name swaps the dropdown to that show's recent episodes.
-  async function browseChannel(channelId, name) {
-    if (!resultsBox) return;
+  // Supadata resolves channel names as well as IDs, so no extra lookup is needed.
+  async function browseChannel(name) {
+    if (!resultsBox || !name) return;
     resultsBox.replaceChildren();
     const p = document.createElement('p');
     p.className = 'yt-results-empty';
@@ -333,7 +358,7 @@
     resultsBox.hidden = false;
     const seq = ++searchSeq;
     try {
-      const r = await fetch(`/api/channel-videos?id=${encodeURIComponent(channelId)}`);
+      const r = await fetch(`/api/channel-videos?id=${encodeURIComponent(name)}`);
       const data = await r.json().catch(() => ({}));
       if (seq !== searchSeq) return;
       renderResults(r.ok ? data.results || [] : [], name);
@@ -344,6 +369,18 @@
 
   let searchTimer = null;
   let searchSeq = 0;
+
+  async function fetchSuggestions(query) {
+    const seq = ++searchSeq;
+    try {
+      const r = await fetch(`/api/suggest?q=${encodeURIComponent(query)}`);
+      const data = await r.json().catch(() => ({}));
+      if (seq !== searchSeq) return; // a newer keystroke owns the box
+      renderSuggestions(data.suggestions || [], query);
+    } catch {
+      if (seq === searchSeq) renderSuggestions([], query);
+    }
+  }
 
   async function searchYouTube(query) {
     const seq = ++searchSeq;
@@ -365,7 +402,53 @@
       hideResults();
       return;
     }
-    searchTimer = setTimeout(() => searchYouTube(val), 350);
+    searchTimer = setTimeout(() => fetchSuggestions(val), 250);
+  });
+
+  // Keyboard + dismissal, like a real search box: arrows walk the rows, Enter
+  // picks the highlighted one (plain Enter still searches the typed text), Esc
+  // or clicking anywhere else closes the dropdown.
+  let activeRow = -1;
+
+  function rows() {
+    return resultsBox && !resultsBox.hidden
+      ? Array.from(resultsBox.querySelectorAll('.yt-suggestion, .yt-result'))
+      : [];
+  }
+
+  function highlight(i) {
+    const list = rows();
+    activeRow = i;
+    list.forEach((el, j) => el.classList.toggle('active', j === i));
+    if (list[i]) list[i].scrollIntoView({ block: 'nearest' });
+  }
+
+  urlInput?.addEventListener('keydown', (e) => {
+    const list = rows();
+    if (e.key === 'Escape') {
+      hideResults();
+      activeRow = -1;
+      return;
+    }
+    if (!list.length) return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      highlight((activeRow + 1) % list.length);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      highlight((activeRow - 1 + list.length) % list.length);
+    } else if (e.key === 'Enter' && activeRow >= 0) {
+      e.preventDefault();
+      list[activeRow].click();
+      activeRow = -1;
+    }
+  });
+
+  document.addEventListener('click', (e) => {
+    if (resultsBox && !resultsBox.hidden && !resultsBox.contains(e.target) && e.target !== urlInput) {
+      hideResults();
+      activeRow = -1;
+    }
   });
 
   async function runAnalysis(url) {

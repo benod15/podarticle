@@ -13,7 +13,7 @@
   var COPY = {
     AUTH_REQUIRED: {
       title: 'Sign in to map an episode',
-      body: 'Mapping a new episode needs a free account so your podarticles are saved and waiting next time. Sign in with Google — mapping is free and unlimited right now, and reading the library never needs an account.',
+      body: 'Mapping a new episode needs a free account so your podarticles are saved and waiting next time. Sign in with Google or any email — mapping is free and unlimited right now, and reading the library never needs an account.',
       action: { type: 'signin' },
     },
     // Same AUTH_REQUIRED code from the API, but on the pricing page the reason is money,
@@ -24,7 +24,7 @@
     },
     AUTH_EXPIRED: {
       title: 'Your sign-in has expired',
-      body: 'We sign everyone out after a while for security. Sign out from the top of this page, sign back in with Google, then try again.',
+      body: 'We sign everyone out after a while for security. Sign out from the top of this page, sign back in, then try again.',
     },
     AUTH_UNAVAILABLE: {
       title: 'Sign-in is not working right now',
@@ -37,6 +37,11 @@
       title: 'You have used your 5 free podarticles',
       body: 'Everything already in the library stays free to read, forever. To keep mapping new episodes, pick a plan: $5 a month billed yearly, or $10 month to month. Cancel whenever you like.',
       action: { type: 'link', href: 'pricing.html', label: 'See the plans' },
+    },
+    VIDEO_TOO_LONG: {
+      title: 'That video is too long to map',
+      body: 'PodArticle is built for podcast episodes — up to about 5 hours. Really long videos (ambient loops, day-long streams, compilations) make maps too big to be useful. Try a single episode instead.',
+      support: true,
     },
     NO_TRANSCRIPT: {
       title: 'We could not find a transcript for this video',
