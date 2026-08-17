@@ -7,6 +7,7 @@
   },
   "rewrites": [
     { "source": "/sitemap.xml", "destination": "/api/sitemap" },
-    { "source": "/episodes/:slug", "destination": "/episodes/:slug.html" }
+    { "source": "/episodes/:slug", "destination": "/episodes/:slug.html" },
+    { "source": "/e/:vid", "destination": "/api/episode-page?vid=:vid" }
   ]
 }

@@ -20,9 +20,13 @@
     return m + ':' + String(s).padStart(2, '0');
   }
 
+  // Share links use the pretty /e/<id> form: api/episode-page.js serves that URL
+  // with link-preview meta baked in server-side (crawlers never see client-injected
+  // tags), so X/iMessage unfurl the episode thumbnail + title. Old ?v= links keep
+  // working — episode.html is still served directly.
   function pageUrl(vid, sec) {
-    var u = 'https://podarticle.com/episode.html?v=' + vid;
-    return sec ? u + '&t=' + Math.floor(sec) : u;
+    var u = 'https://podarticle.com/e/' + vid;
+    return sec ? u + '?t=' + Math.floor(sec) : u;
   }
 
   // ---------- 1. link preview metadata ----------
@@ -43,7 +47,8 @@
     var analysis = data.analysis || {};
     var title = (meta.title || 'Episode') + ' — PodArticle';
     var desc = (analysis.summary || 'Every section, timestamped. Watch only what matters to you.').slice(0, 200);
-    var img = 'https://i.ytimg.com/vi/' + data.video_id + '/maxresdefault.jpg';
+    // hqdefault always exists; maxresdefault 404s on some uploads = no card at all.
+    var img = 'https://i.ytimg.com/vi/' + data.video_id + '/hqdefault.jpg';
     var url = pageUrl(data.video_id);
 
     setMeta('property', 'og:title', title);
@@ -98,12 +103,13 @@
   }
 
   function buildPost(payload) {
+    // One link only — X unfurls a card for exactly one URL, and two links means
+    // no thumbnail at all. The moment page always carries the full map with it.
     if (payload.sec != null && payload.name) {
       return (
         '\u201C' + hookText(payload.name) + '\u201D\n\n' +
-        'This moment at ' + fmtTs(payload.sec) + ' \u25B6\n' +
-        payload.link + '\n\n' +
-        '(full episode map: ' + pageUrl(payload.vid) + ')'
+        'The moment at ' + fmtTs(payload.sec) + ' \u2014 starts playing the second you open it:\n' +
+        payload.link
       );
     }
     return (
@@ -125,7 +131,9 @@
     // is attached by X automatically from the link inside the text.
     var label = document.createElement('p');
     label.className = 'share-menu-label';
-    label.textContent = payload.sec != null ? 'Your post — edit it however you like:' : 'Share this map:';
+    label.textContent = payload.sec != null
+      ? 'Add your own line at the top — posts with a personal take travel furthest:'
+      : 'Share this map — add your own line to make it yours:';
 
     var ta = document.createElement('textarea');
     ta.className = 'share-compose';
@@ -164,7 +172,12 @@
     }
     ta.addEventListener('input', syncX);
     syncX();
-    setTimeout(autosize, 0);
+    setTimeout(function () {
+      autosize();
+      // Cursor at the very top so the first keystroke becomes the personal line.
+      ta.focus();
+      ta.setSelectionRange(0, 0);
+    }, 0);
 
     actions.append(x, copy, sms);
     menu.append(label, ta, actions);
