@@ -54,6 +54,15 @@
     <p class="eyebrow">Internal</p>
     <h1 style="margin-top:0;">Post queue</h1>
     <p style="color:var(--color-text-faint);">Newest public maps, each with a pre-written post in the share format — thumbnail card rides the link automatically. Edit, then tap Post on X. Posted items dim so you can work top to bottom.</p>
+    <div class="pq-item" style="background:var(--color-bg,#faf7f2);">
+      <p class="pq-title" style="margin-bottom:6px;">Where these actually get reach</p>
+      <p class="pq-meta" style="font-size:13.5px;line-height:1.6;">
+        1. <strong>Quote-tweet the show's own episode tweet</strong> — every big fantasy show announces new episodes; your map in a quote puts it in front of their audience (and shows often retweet). Use "Find the show's tweet" on any item.<br>
+        2. <strong>Reply with timestamp links</strong> — when someone asks about a player or take, reply with the section link; it starts playing at that exact moment.<br>
+        3. <strong>One hashtag max</strong> — pre-filled for you; more looks spammy.<br>
+        4. <strong>Timing</strong> — draft season: 7–10pm ET. In-season: Sun night recaps, Tue waiver content.
+      </p>
+    </div>
     <div id="pq-list"><p style="color:var(--color-text-faint);">Loading…</p></div>
   </main>
 
@@ -69,12 +78,22 @@
       try { localStorage.setItem(POSTED_KEY, JSON.stringify(p)); } catch {}
     }
 
+    function hashtagFor(ep) {
+      var text = ((ep.title || '') + ' ' + (ep.show_name || '')).toLowerCase();
+      if (ep.category === 'sports') return text.indexOf('fantasy') >= 0 ? '#FantasyFootball' : '#NFL';
+      if (ep.category === 'tech') return '#AI';
+      if (ep.category === 'finance') return '#Markets';
+      return '';
+    }
+
     function buildPost(ep) {
       var link = 'https://podarticle.com/e/' + ep.video_id;
       var title = (ep.title || '').replace(/\s+/g, ' ').trim();
       if (title.length > 150) title = title.slice(0, 147).trim() + '…';
+      var tag = hashtagFor(ep);
       return 'New episode map: "' + title + '"\n\n' +
-        'Every section timestamped — start at the part you care about:\n' + link;
+        'Every section timestamped — start at the part you care about:\n' + link +
+        (tag ? '\n\n' + tag : '');
     }
 
     fetch('/api/episodes')
@@ -123,6 +142,14 @@
             item.classList.add('pq-posted');
           });
 
+          var find = document.createElement('a');
+          find.className = 'share-menu-item';
+          find.textContent = "Find the show's tweet";
+          find.href = 'https://x.com/search?q=' + encodeURIComponent('"' + (ep.title || '').slice(0, 60) + '"') + '&f=live';
+          find.target = '_blank';
+          find.rel = 'noopener';
+          find.title = 'Search X for the show announcing this episode — quote-tweet it with your map link for the most reach';
+
           var open = document.createElement('a');
           open.className = 'share-menu-item';
           open.textContent = 'Open map';
@@ -130,7 +157,7 @@
           open.target = '_blank';
           open.rel = 'noopener';
 
-          actions.append(post, open);
+          actions.append(post, find, open);
           item.append(head, ta, actions);
           list.appendChild(item);
         });
