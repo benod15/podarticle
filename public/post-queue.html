@@ -105,24 +105,26 @@
 
     // Posts lead with the episode's #1 ranked moment, not the episode title —
     // a specific hook plus a deep link that plays from that exact second.
+    // Every post carries #podarticle so the whole flywheel is one click apart.
     function buildPost(ep) {
       var tag = hashtagFor(ep);
+      var tags = tag ? tag + ' #podarticle' : '#podarticle';
       var m = ep.top_moment;
       if (m && m.seconds != null) {
         var link = 'https://podarticle.com/e/' + ep.video_id + '?t=' + m.seconds;
         var mTitle = (m.title || '').replace(/\s+/g, ' ').trim();
         var desc = (m.description || '').replace(/\s+/g, ' ').trim();
-        if (desc.length > 90) desc = desc.slice(0, 87).replace(/\s+\S*$/, '') + '…';
+        if (desc.length > 80) desc = desc.slice(0, 77).replace(/\s+\S*$/, '') + '…';
         return '"' + mTitle + '" — ' + desc + '\n\n' +
           'The #1 moment from this one — starts playing at ' + fmtTs(m.seconds) + ' when you open it:\n' + link +
-          (tag ? '\n\n' + tag : '');
+          '\n\n' + tags;
       }
       var link = 'https://podarticle.com/e/' + ep.video_id;
       var title = (ep.title || '').replace(/\s+/g, ' ').trim();
       if (title.length > 150) title = title.slice(0, 147).trim() + '…';
       return 'New episode map: "' + title + '"\n\n' +
         'Every section timestamped — start at the part you care about:\n' + link +
-        (tag ? '\n\n' + tag : '');
+        '\n\n' + tags;
     }
 
     function render(eps) {
