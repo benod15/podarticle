@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Today's post — PodArticle</title>
+  <title>Post queue — PodArticle</title>
   <meta name="robots" content="noindex, nofollow">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -11,43 +11,37 @@
   <link rel="stylesheet" href="style.css">
   <script src="thumb.js"></script>
   <style>
-    .pq-wrap { max-width: 640px; margin: 0 auto; padding: 3rem 1.25rem 5rem; }
-    .pq-feature {
-      border: 1px solid var(--color-border, rgba(0,0,0,.12));
-      border-radius: 16px;
-      padding: 20px;
-      background: var(--color-surface, #fff);
-      box-shadow: 0 8px 30px rgba(0,0,0,.06);
+    .pq-wrap { max-width: 680px; margin: 0 auto; padding: 2.5rem 1.25rem 5rem; }
+    .pq-progress {
+      font-size: 14px; font-weight: 600; color: var(--color-text-faint);
+      margin: 0 0 16px;
     }
-    .pq-head { display: flex; gap: 12px; align-items: center; margin-bottom: 12px; }
-    .pq-head img { width: 96px; border-radius: 8px; flex: none; }
-    .pq-title { font-size: 15px; font-weight: 600; margin: 0; }
-    .pq-meta { font-size: 12.5px; color: var(--color-text-faint); margin: 3px 0 0; }
-    .pq-text {
-      width: 100%; font: inherit; font-size: 14.5px; line-height: 1.5;
+    .pq-row {
+      border: 1px solid var(--color-border, rgba(0,0,0,.12));
+      border-radius: 14px;
+      padding: 12px 14px;
+      margin-bottom: 10px;
+      background: var(--color-surface, #fff);
+    }
+    .pq-row.posted { opacity: .4; }
+    .pq-row.posted .pq-post { pointer-events: none; }
+    .pq-main { display: flex; gap: 12px; align-items: center; }
+    .pq-main img { width: 84px; border-radius: 8px; flex: none; }
+    .pq-info { flex: 1; min-width: 0; }
+    .pq-title {
+      font-size: 14px; font-weight: 600; margin: 0;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .pq-meta { font-size: 12px; color: var(--color-text-faint); margin: 3px 0 0; }
+    .pq-btns { display: flex; gap: 6px; flex: none; }
+    .pq-btns .share-menu-item { white-space: nowrap; }
+    .pq-edit {
+      width: 100%; font: inherit; font-size: 14px; line-height: 1.5;
       border: 1px solid var(--color-border, rgba(0,0,0,.12)); border-radius: 10px;
-      padding: 12px 14px; margin: 0 0 12px; resize: vertical;
+      padding: 10px 12px; margin: 10px 0 0; resize: vertical;
       color: var(--color-text); background: var(--color-bg, #fff);
     }
-    .pq-actions { display: flex; gap: 8px; flex-wrap: wrap; }
-    .pq-done {
-      text-align: center; padding: 28px 16px;
-      border: 1px dashed var(--color-border, rgba(0,0,0,.15));
-      border-radius: 16px; color: var(--color-text-faint);
-    }
-    .pq-next { margin-top: 28px; }
-    .pq-next h2 { font-size: 15px; margin: 0 0 10px; color: var(--color-text-faint); font-weight: 600; }
-    .pq-alt {
-      display: flex; gap: 10px; align-items: center; width: 100%;
-      padding: 10px 12px; margin-bottom: 8px; text-align: left;
-      border: 1px solid var(--color-border, rgba(0,0,0,.12)); border-radius: 12px;
-      background: none; cursor: pointer; font: inherit; color: var(--color-text);
-    }
-    .pq-alt:hover { border-color: var(--color-primary-strong); }
-    .pq-alt img { width: 64px; border-radius: 6px; flex: none; }
-    .pq-alt-title { font-size: 13.5px; font-weight: 500; }
-    .pq-alt-meta { font-size: 12px; color: var(--color-text-faint); }
-    .pq-tip { font-size: 13px; color: var(--color-text-faint); line-height: 1.6; margin-top: 20px; }
+    .pq-tip { font-size: 13px; color: var(--color-text-faint); line-height: 1.6; margin-top: 18px; }
   </style>
 </head>
 <body>
@@ -68,24 +62,21 @@
 
   <main class="pq-wrap">
     <p class="eyebrow">Internal</p>
-    <h1 style="margin-top:0;">Today's post</h1>
-    <p style="color:var(--color-text-faint);">One episode, one post, one button. Edit if you want, tap Post on X, done for the day.</p>
-    <div id="pq-feature"><p style="color:var(--color-text-faint);">Loading…</p></div>
-    <div class="pq-next" id="pq-next" hidden>
-      <h2>Up next — tap to swap in</h2>
-      <div id="pq-alts"></div>
-    </div>
+    <h1 style="margin-top:0;">Post queue</h1>
+    <p style="color:var(--color-text-faint);">Every row is ready to fire — tap Post on X, press Post, next. Edit only if you want. Posted rows dim.</p>
+    <p class="pq-progress" id="pq-progress"></p>
+    <div id="pq-list"><p style="color:var(--color-text-faint);">Loading…</p></div>
     <p class="pq-tip">
-      Most reach: <strong>quote-tweet the show's own episode post</strong> (use "Find the show's post")
-      or reply to a fantasy question with a timestamp link. Best time: 7–10pm ET.
+      One practical note: posting 3–5 at a time with breaks reads better than 20 back-to-back —
+      both to X's spam filters and to your followers' feeds. For extra reach, quote-tweet the
+      show's own post instead ("Show's post" finds it).
     </p>
   </main>
 
   <script>
   (function () {
-    var feature = document.getElementById('pq-feature');
-    var nextWrap = document.getElementById('pq-next');
-    var alts = document.getElementById('pq-alts');
+    var list = document.getElementById('pq-list');
+    var progress = document.getElementById('pq-progress');
     var POSTED_KEY = 'pa_posted';
 
     function posted() {
@@ -114,118 +105,96 @@
         (tag ? '\n\n' + tag : '');
     }
 
-    function metaLine(ep) {
-      return [ep.show_name, ep.duration_sec ? Math.round(ep.duration_sec / 60) + ' min' : null]
-        .filter(Boolean).join(' · ');
-    }
+    function render(eps) {
+      var done = posted();
+      var total = eps.length;
+      var doneCount = eps.filter(function (ep) { return done[ep.video_id]; }).length;
+      progress.textContent = doneCount + ' of ' + total + ' posted';
 
-    function renderFeature(ep, remaining) {
-      feature.replaceChildren();
-      var box = document.createElement('div');
-      box.className = 'pq-feature';
-
-      var head = document.createElement('div');
-      head.className = 'pq-head';
-      head.innerHTML = '<img alt=""><div><p class="pq-title"></p><p class="pq-meta"></p></div>';
-      window.PAThumb.bind(head.querySelector('img')).src =
-        'https://i.ytimg.com/vi/' + ep.video_id + '/hqdefault.jpg';
-      head.querySelector('.pq-title').textContent = ep.title;
-      head.querySelector('.pq-meta').textContent = metaLine(ep);
-
-      var ta = document.createElement('textarea');
-      ta.className = 'pq-text';
-      ta.rows = 5;
-      ta.value = buildPost(ep);
-
-      var actions = document.createElement('div');
-      actions.className = 'pq-actions';
-
-      var post = document.createElement('a');
-      post.className = 'share-menu-item share-menu-primary';
-      post.textContent = 'Post on X';
-      post.target = '_blank';
-      post.rel = 'noopener';
-      function sync() {
-        post.href = 'https://x.com/intent/tweet?text=' + encodeURIComponent(ta.value);
-      }
-      ta.addEventListener('input', sync);
-      sync();
-      post.addEventListener('click', function () {
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-          navigator.clipboard.writeText(ta.value).catch(function () {});
-        }
-        markPosted(ep.video_id);
-        post.textContent = 'Posted ✓';
-        setTimeout(function () { pick(remaining); }, 900);
-      });
-
-      var find = document.createElement('a');
-      find.className = 'share-menu-item';
-      find.textContent = "Find the show's post";
-      find.href = 'https://x.com/search?q=' + encodeURIComponent('"' + (ep.title || '').slice(0, 60) + '"') + '&f=live';
-      find.target = '_blank';
-      find.rel = 'noopener';
-
-      var open = document.createElement('a');
-      open.className = 'share-menu-item';
-      open.textContent = 'Open map';
-      open.href = '/e/' + ep.video_id;
-      open.target = '_blank';
-      open.rel = 'noopener';
-
-      actions.append(post, find, open);
-      box.append(head, ta, actions);
-      feature.appendChild(box);
-    }
-
-    function renderAlts(remaining) {
-      if (!remaining.length) {
-        nextWrap.hidden = true;
+      list.replaceChildren();
+      if (!total) {
+        list.innerHTML = '<p>No public episodes yet — run a seed batch first.</p>';
         return;
       }
-      nextWrap.hidden = false;
-      alts.replaceChildren();
-      remaining.slice(0, 3).forEach(function (ep, i) {
-        var btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'pq-alt';
-        btn.innerHTML = '<img alt=""><span><span class="pq-alt-title"></span><br><span class="pq-alt-meta"></span></span>';
-        window.PAThumb.bind(btn.querySelector('img')).src =
+
+      eps.forEach(function (ep) {
+        var isPosted = !!done[ep.video_id];
+        var row = document.createElement('div');
+        row.className = 'pq-row' + (isPosted ? ' posted' : '');
+
+        var main = document.createElement('div');
+        main.className = 'pq-main';
+        main.innerHTML =
+          '<img alt="">' +
+          '<div class="pq-info"><p class="pq-title"></p><p class="pq-meta"></p></div>' +
+          '<div class="pq-btns"></div>';
+        window.PAThumb.bind(main.querySelector('img')).src =
           'https://i.ytimg.com/vi/' + ep.video_id + '/default.jpg';
-        btn.querySelector('.pq-alt-title').textContent = ep.title;
-        btn.querySelector('.pq-alt-meta').textContent = metaLine(ep);
-        btn.addEventListener('click', function () {
-          var rest = remaining.slice();
-          rest.splice(i, 1);
-          renderFeature(ep, rest);
-          renderAlts(rest);
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-        });
-        alts.appendChild(btn);
-      });
-    }
+        main.querySelector('.pq-title').textContent = ep.title;
+        main.querySelector('.pq-meta').textContent =
+          [ep.show_name, ep.duration_sec ? Math.round(ep.duration_sec / 60) + ' min' : null]
+            .filter(Boolean).join(' · ');
 
-    function pick(eps) {
-      if (!eps.length) {
-        feature.innerHTML =
-          '<div class="pq-done"><strong>All caught up.</strong><br>Every public map has been posted. Run another seed batch when you\'re ready for more.</div>';
-        nextWrap.hidden = true;
-        return;
-      }
-      renderFeature(eps[0], eps.slice(1));
-      renderAlts(eps.slice(1));
+        var btns = main.querySelector('.pq-btns');
+
+        var post = document.createElement('a');
+        post.className = 'share-menu-item share-menu-primary pq-post';
+        post.textContent = isPosted ? 'Posted' : 'Post on X';
+        post.target = '_blank';
+        post.rel = 'noopener';
+        var text = buildPost(ep);
+        function sync() {
+          post.href = 'https://x.com/intent/tweet?text=' + encodeURIComponent(text);
+        }
+        sync();
+        post.addEventListener('click', function () {
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).catch(function () {});
+          }
+          markPosted(ep.video_id);
+          row.classList.add('posted');
+          post.textContent = 'Posted';
+          var d = posted();
+          var c = (list.querySelectorAll('.pq-row.posted') || []).length;
+          progress.textContent = c + ' of ' + total + ' posted';
+        });
+
+        var edit = document.createElement('button');
+        edit.type = 'button';
+        edit.className = 'share-menu-item';
+        edit.textContent = 'Edit';
+        var ta = null;
+        edit.addEventListener('click', function () {
+          if (ta) { ta.remove(); ta = null; edit.textContent = 'Edit'; return; }
+          ta = document.createElement('textarea');
+          ta.className = 'pq-edit';
+          ta.rows = 4;
+          ta.value = text;
+          ta.addEventListener('input', function () { text = ta.value; sync(); });
+          row.appendChild(ta);
+          ta.focus();
+          edit.textContent = 'Done';
+        });
+
+        var find = document.createElement('a');
+        find.className = 'share-menu-item';
+        find.textContent = "Show's post";
+        find.href = 'https://x.com/search?q=' + encodeURIComponent('"' + (ep.title || '').slice(0, 60) + '"') + '&f=live';
+        find.target = '_blank';
+        find.rel = 'noopener';
+        find.title = 'Find the show announcing this episode — quote-tweet it with your map link for more reach';
+
+        btns.append(post, edit, find);
+        row.appendChild(main);
+        list.appendChild(row);
+      });
     }
 
     fetch('/api/episodes')
       .then(function (r) { return r.json(); })
-      .then(function (data) {
-        var done = posted();
-        // Newest first, skipping anything already posted from this device.
-        var remaining = (data.episodes || []).filter(function (ep) { return !done[ep.video_id]; });
-        pick(remaining);
-      })
+      .then(function (data) { render(data.episodes || []); })
       .catch(function () {
-        feature.innerHTML = '<p>Could not load episodes — try refreshing.</p>';
+        list.innerHTML = '<p>Could not load episodes — try refreshing.</p>';
       });
   })();
   </script>
