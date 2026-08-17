@@ -846,3 +846,33 @@ details[open] .chapter-chevron { transform: rotate(180deg); }
 .yt-suggestion:hover,
 .yt-suggestion.active { background: var(--color-cream-dark, rgba(0,0,0,.045)); }
 .yt-result.active { background: var(--color-cream-dark, rgba(0,0,0,.045)); }
+
+/* ---------- Share compose menu ---------- */
+.share-menu-compose { width: min(340px, calc(100vw - 24px)); padding: 12px; }
+.share-menu-label {
+  margin: 0 0 8px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-faint);
+}
+.share-compose {
+  width: 100%;
+  resize: vertical;
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--color-text);
+  background: var(--color-surface, #fff);
+  border: 1px solid var(--color-border, rgba(0,0,0,.12));
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin: 0 0 10px;
+}
+.share-compose:focus { outline: 2px solid var(--color-primary-strong); outline-offset: -1px; }
+.share-menu-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.share-menu-primary {
+  background: var(--color-primary-strong);
+  color: #fff !important;
+  font-weight: 600;
+}
+.share-menu-primary:hover { filter: brightness(1.08); }

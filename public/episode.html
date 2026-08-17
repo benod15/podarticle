@@ -289,8 +289,9 @@
 
     html += '</article>';
     root.innerHTML = html;
-    if (window.PAShare) { window.PAShare.attach(root, data); window.PAShare.honorDeepLink(data); }
+    // Mount the player before honoring a deep link — a shared ?t= starts playing.
     if (window.PAYouTube) window.PAYouTube.mount();
+    if (window.PAShare) { window.PAShare.attach(root, data); window.PAShare.honorDeepLink(data); }
     }
   })();
   </script>

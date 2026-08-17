@@ -98,7 +98,7 @@
     loadApi();
   }
 
-  function createPlayer(startSeconds) {
+  function createPlayer(startSeconds, muted) {
     var frame = mount && mount.querySelector('[data-yt-frame]');
     if (!frame || player) return;
     player = true; // claim the slot so concurrent clicks do not build two players
@@ -111,6 +111,10 @@
           playerVars: {
             start: startSeconds || 0,
             autoplay: 1,
+            // Browsers only allow autoplay when muted (or after a user gesture).
+            // Deep links arrive without a gesture, so they start muted — one tap
+            // on the player's volume unmutes. In-page clicks keep sound on.
+            mute: muted ? 1 : 0,
             rel: 0,
             playsinline: 1,
             modestbranding: 1,
@@ -135,8 +139,9 @@
   }
 
   // Seek the in-page player to `seconds`, creating it on first use.
+  // opts.muted: start muted so autoplay survives browser policy (shared links).
   // Returns false when no player is available, so callers can fall back to YouTube.
-  function seek(seconds) {
+  function seek(seconds, opts) {
     if (!mount || apiFailed) return false;
     seconds = Math.max(0, Math.floor(seconds || 0));
     engaged = true;
@@ -145,7 +150,7 @@
       player.playVideo();
     } else {
       pendingSeek = seconds;
-      createPlayer(seconds);
+      createPlayer(seconds, !!(opts && opts.muted));
     }
     reveal();
     updateBackButton();
