@@ -36,6 +36,18 @@ const { categorize } = await import(join(ROOT, 'lib/classify.js'));
 const args = process.argv.slice(2);
 const batch = Number(args[args.indexOf('--batch') + 1]);
 const limit = args.includes('--limit') ? Number(args[args.indexOf('--limit') + 1]) : null;
+// Only seed recent episodes: candidates are tried newest-first (from the
+// search result's relative upload date) and anything older than --max-age
+// days (default 45) is skipped on its exact ISO publish date.
+const MAX_AGE_DAYS = args.includes('--max-age') ? Number(args[args.indexOf('--max-age') + 1]) : 45;
+
+function ageDaysFromRelative(s) {
+  const m = /(\d+)\s+(hour|day|week|month|year)s?\s+ago/i.exec(s || '');
+  if (!m) return null;
+  const n = Number(m[1]);
+  const unit = m[2].toLowerCase();
+  return n * (unit === 'hour' ? 1 / 24 : unit === 'day' ? 1 : unit === 'week' ? 7 : unit === 'month' ? 30 : 365);
+}
 if (!batch) {
   console.error('usage: node scripts/seed.mjs --batch N [--limit M]');
   process.exit(1);
@@ -75,7 +87,10 @@ for (const query of entry.shows) {
     failed++;
     continue;
   }
-  for (const v of results) {
+  const candidates = results
+    .map((v) => ({ v, age: ageDaysFromRelative(v.uploadDate) }))
+    .sort((a, b) => (a.age ?? 9999) - (b.age ?? 9999));
+  for (const { v } of candidates) {
     if (found >= entry.episodes_per_show) break;
     if (limit && done >= limit) break outer;
     const videoId = v.id;
@@ -89,7 +104,14 @@ for (const query of entry.shows) {
         skipped++;
         continue;
       }
-      console.log(`  → mapping "${metadata.title.slice(0, 60)}" (${Math.round(metadata.durationSec / 60)}min)`);
+      const ageDays = metadata.publishedAt
+        ? (Date.now() - new Date(metadata.publishedAt).getTime()) / 86400000
+        : null;
+      if (ageDays !== null && ageDays > MAX_AGE_DAYS) {
+        skipped++;
+        continue;
+      }
+      console.log(`  → mapping "${metadata.title.slice(0, 60)}" (${Math.round(metadata.durationSec / 60)}min, ${ageDays === null ? '?' : Math.round(ageDays)}d old)`);
       const chapters = parseChapters(metadata.description);
       const segments = await fetchTranscript(videoId, SUPADATA);
       const lines = transcriptToLines(segments);
