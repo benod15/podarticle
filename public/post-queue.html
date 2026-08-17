@@ -133,11 +133,18 @@
           post.target = '_blank';
           post.rel = 'noopener';
           function sync() {
-            post.href = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(ta.value);
+            post.href = 'https://x.com/intent/post?text=' + encodeURIComponent(ta.value);
           }
           ta.addEventListener('input', sync);
           sync();
           post.addEventListener('click', function () {
+            // Safety net: if X drops you on a login wall, the post is already
+            // on the clipboard — paste it straight into X.
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+              navigator.clipboard.writeText(ta.value).catch(function () {});
+            }
+            post.textContent = 'Opening X — post copied';
+            setTimeout(function () { post.textContent = 'Post on X'; }, 3000);
             markPosted(ep.video_id);
             item.classList.add('pq-posted');
           });

@@ -167,11 +167,23 @@
     sms.textContent = 'Text it';
 
     function syncX() {
-      x.href = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(ta.value);
+      x.href = 'https://x.com/intent/post?text=' + encodeURIComponent(ta.value);
       autosize();
     }
     ta.addEventListener('input', syncX);
     syncX();
+
+    // Safety net: X's intent can land on a login wall (or lose the redirect),
+    // so the full post goes on the clipboard too — if the composer doesn't
+    // come up pre-filled, paste straight into X.
+    x.addEventListener('click', function () {
+      var text = ta.value;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).catch(function () {});
+      }
+      x.textContent = 'Opening X — post copied';
+      setTimeout(function () { x.textContent = 'Post on X'; }, 3000);
+    });
     setTimeout(function () {
       autosize();
       // Cursor at the very top so the first keystroke becomes the personal line.
