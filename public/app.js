@@ -127,6 +127,18 @@
     slot.append(note, btn, divider, form);
   }
 
+  // The header "Sign in" button asks for this prompt; so does a #signin deep
+  // link from pages that don't have the slot (episode pages, library, etc).
+  document.addEventListener('pa:signin-request', () => {
+    showAuthPrompt(null);
+    document.querySelector('[data-auth-prompt]')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    document.querySelector('[data-auth-prompt] input[type="email"]')?.focus({ preventScroll: true });
+  });
+  if (window.location.hash === '#signin') {
+    showAuthPrompt(null);
+    document.querySelector('[data-auth-prompt]')?.scrollIntoView({ block: 'center' });
+  }
+
   function hideAuthPrompt() {
     const slot = document.querySelector('[data-auth-prompt]');
     if (slot) {
