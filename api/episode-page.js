@@ -118,7 +118,9 @@ export default async function handler(req, res) {
   const description = String(ep.analysis?.summary || 'Every section, timestamped. Watch only what matters to you.').slice(0, 200);
   // Served from our own domain (api/og-image.js) — X's image proxy failing to
   // fetch a third-party host once means a broken card cached against the URL.
-  const image = `https://podarticle.com/api/og-image?vid=${vid}`;
+  // Moment links (?t=) get a card headlining that moment.
+  const tSec = String(req.query?.t || '').replace(/[^0-9]/g, '');
+  const image = `https://podarticle.com/api/og-image?vid=${vid}${tSec ? `&t=${tSec}` : ''}`;
   const url = `https://podarticle.com/e/${vid}`;
 
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
