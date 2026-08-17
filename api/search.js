@@ -34,6 +34,7 @@ export default async function handler(req, res) {
         video_id: v.id,
         title: v.title || '',
         channel: v.channel?.name || '',
+        channel_id: v.channel?.id || null,
         duration_sec: v.duration || null,
         uploaded: v.uploadDate || null,
         thumbnail: `https://i.ytimg.com/vi/${v.id}/hqdefault.jpg`,

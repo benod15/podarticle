@@ -23,13 +23,14 @@
   const progressBar = document.querySelector('[data-progress-bar]');
   const errorEl = document.querySelector('[data-analysis-error]');
 
-  // Stage timing estimates (seconds) — mirrors real backend stage durations.
-  // The wheel advances on a timer; it jumps to 100% when the response lands.
+  // One honest status line, not a checklist: the bar creeps forward and the
+  // sentence says what is happening right now. Jumps to 100% when the map lands.
+  const statusEl = document.querySelector('[data-analysis-status]');
   const STAGES = [
-    { key: 'metadata', at: 0, pct: 12 },
-    { key: 'transcript', at: 4, pct: 38 },
-    { key: 'analysis', at: 20, pct: 78 },
-    { key: 'save', at: 75, pct: 94 },
+    { at: 0, pct: 8, msg: 'Finding the episode…' },
+    { at: 4, pct: 30, msg: 'Pulling the full transcript…' },
+    { at: 20, pct: 70, msg: 'Mapping the sections…' },
+    { at: 75, pct: 92, msg: 'Finishing your podarticle…' },
   ];
   const MAX_WAIT = 240; // cap the crawl at 94% after 4 minutes
 
@@ -40,14 +41,9 @@
     timers = [];
   }
 
-  function setStage(key, pct) {
-    document.querySelectorAll('.analysis-stages li').forEach((li) => {
-      const k = li.dataset.stage;
-      const order = STAGES.map((s) => s.key);
-      li.classList.toggle('done', order.indexOf(k) < order.indexOf(key));
-      li.classList.toggle('active', k === key);
-    });
-    if (progressBar) progressBar.style.width = pct + '%';
+  function setStage(stage) {
+    if (statusEl) statusEl.textContent = stage.msg;
+    if (progressBar) progressBar.style.width = stage.pct + '%';
   }
 
   // Swap the analyzer CTA for a Google sign-in prompt, carrying the pasted link across
@@ -141,10 +137,7 @@
 
   function finishProgress() {
     clearTimers();
-    document.querySelectorAll('.analysis-stages li').forEach((li) => {
-      li.classList.add('done');
-      li.classList.remove('active');
-    });
+    if (statusEl) statusEl.textContent = 'Done — opening your podarticle…';
     if (progressBar) progressBar.style.width = '100%';
   }
 
@@ -208,9 +201,8 @@
       progressBar.classList.remove('failed');
       progressBar.style.width = '4%';
     }
-    document.querySelectorAll('.analysis-stages li').forEach((li) => li.classList.remove('done', 'active'));
     for (const s of STAGES) {
-      timers.push(setTimeout(() => setStage(s.key, s.pct), s.at * 1000));
+      timers.push(setTimeout(() => setStage(s), s.at * 1000));
     }
     // Slow crawl after last stage so the bar never looks dead
     timers.push(
@@ -300,16 +292,26 @@
       btn.type = 'button';
       btn.className = 'yt-result';
       const mins = v.duration_sec ? Math.round(v.duration_sec / 60) : null;
+      const when = v.uploaded ? new Date(v.uploaded).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : null;
       btn.innerHTML = `
         <img loading="lazy" alt="">
         <span class="yt-result-body">
           <span class="yt-result-title"></span>
           <span class="yt-result-meta"></span>
+          ${v.channel_id ? '<span class="yt-result-channel"></span>' : ''}
         </span>`;
       window.PAThumb.bind(btn.querySelector('img')).src = v.thumbnail;
       btn.querySelector('.yt-result-title').textContent = v.title;
       btn.querySelector('.yt-result-meta').textContent =
-        [v.channel, mins ? `${mins} min` : null].filter(Boolean).join(' · ');
+        [mins ? `${mins} min` : null, when].filter(Boolean).join(' · ');
+      const chanEl = btn.querySelector('.yt-result-channel');
+      if (chanEl) {
+        chanEl.textContent = `More from ${v.channel} →`;
+        chanEl.addEventListener('click', (e) => {
+          e.stopPropagation();
+          browseChannel(v.channel_id, v.channel);
+        });
+      }
       btn.addEventListener('click', () => {
         hideResults();
         if (urlInput) urlInput.value = `https://www.youtube.com/watch?v=${v.video_id}`;
@@ -318,6 +320,26 @@
       resultsBox.appendChild(btn);
     }
     resultsBox.hidden = false;
+  }
+
+  // Clicking a channel name swaps the dropdown to that show's recent episodes.
+  async function browseChannel(channelId, name) {
+    if (!resultsBox) return;
+    resultsBox.replaceChildren();
+    const p = document.createElement('p');
+    p.className = 'yt-results-empty';
+    p.textContent = `Loading recent episodes from ${name}…`;
+    resultsBox.appendChild(p);
+    resultsBox.hidden = false;
+    const seq = ++searchSeq;
+    try {
+      const r = await fetch(`/api/channel-videos?id=${encodeURIComponent(channelId)}`);
+      const data = await r.json().catch(() => ({}));
+      if (seq !== searchSeq) return;
+      renderResults(r.ok ? data.results || [] : [], name);
+    } catch {
+      if (seq === searchSeq) renderResults([], name);
+    }
   }
 
   let searchTimer = null;
@@ -383,7 +405,12 @@
       finishProgress();
       // Hand the result to the renderer directly — the slug page is only for
       // library browsing (seed static pages); new analyses render dynamically.
-      try { sessionStorage.setItem('pa_result_' + data.video_id, JSON.stringify(data)); } catch {}
+      try {
+        sessionStorage.setItem('pa_result_' + data.video_id, JSON.stringify(data));
+        // Tells the homepage to come back spotless: no leftover link in the box,
+        // no half-lit progress state.
+        sessionStorage.setItem('pa_reset_home', '1');
+      } catch {}
       window.location.href = `/episode.html?v=${data.video_id}`;
     } catch {
       failProgress('NETWORK');
@@ -423,6 +450,23 @@
       else showAuthPrompt(pending);
     })();
   }
+
+  // ---------- Reset after a completed analysis ----------
+  // Coming back from an episode map should feel like a fresh visit, not the
+  // aftermath of the last one.
+  try {
+    if (sessionStorage.getItem('pa_reset_home')) {
+      sessionStorage.removeItem('pa_reset_home');
+      if (urlInput) urlInput.value = '';
+      hideProgress();
+      hideAuthPrompt();
+      if (progressBar) {
+        progressBar.style.width = '0%';
+        progressBar.classList.remove('failed');
+      }
+      hideResults();
+    }
+  } catch {}
 
   // ---------- Episode library: sort + search ----------
   const grid = document.querySelector('[data-library-grid]');

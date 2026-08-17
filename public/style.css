@@ -802,3 +802,26 @@ details[open] .chapter-chevron { transform: rotate(180deg); }
   text-decoration: underline;
 }
 .auth-forgot:hover { color: var(--color-primary-strong); }
+
+/* ---------- Honest progress status (replaces the stage checklist) ---------- */
+.analysis-status {
+  margin: 12px 0 2px;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--color-text);
+}
+.analysis-substatus {
+  margin: 0;
+  font-size: 13px;
+  color: var(--color-text-faint);
+}
+.analysis-progress.error-only .analysis-status,
+.analysis-progress.error-only .analysis-substatus { display: none; }
+
+/* Channel link inside search results */
+.yt-result-channel {
+  font-size: 12px;
+  color: var(--color-primary-strong);
+  font-weight: 500;
+}
+.yt-result:hover .yt-result-channel { text-decoration: underline; }
