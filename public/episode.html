@@ -9,6 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <script src="thumb.js"></script>
+  <script src="share.js"></script>
 </head>
 <body>
 
@@ -200,6 +201,13 @@
     var allVerified = top5.length > 0 && top5.every(function (t) { return t.verified !== false; });
 
     document.title = (meta.title || 'Episode') + ' — PodArticle';
+    if (window.PAShare) window.PAShare.injectMeta(data);
+
+    var SHARE_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3v13"/><polyline points="7,8 12,3 17,8"/><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg>';
+    function shareBtn(sec, title) {
+      return '<button type="button" class="share-btn" data-share data-share-sec="' + Math.floor(sec || 0) +
+        '" data-share-title="' + esc(title) + '" aria-label="Share this moment" title="Share this moment">' + SHARE_ICON + '</button>';
+    }
 
     var html = '';
 
@@ -217,6 +225,7 @@
     html += '<p class="ep-kicker">Episode map &middot; ' + esc(meta.author || 'YouTube') + '</p>';
     html += '<h1 class="ep-title">' + esc(meta.title || 'Untitled episode') + '</h1>';
     html += '<p class="ep-intro">' + esc(analysis.summary || '') + '</p>';
+    html += '<div class="ep-share-row"><button type="button" class="share-btn share-btn-text" data-share>' + SHARE_ICON + '<span>Share this map</span></button></div>';
 
     // Verified badge
     if (allVerified && data.chapters_found > 0) {
@@ -241,7 +250,8 @@
           '<span class="top5-rank">' + esc(t.rank) + '</span>' +
           '<div class="top5-body"><div class="top5-top-row">' +
           '<span class="top5-title">' + esc(t.title) + '</span>' +
-          '<span class="top5-time">' + esc(fmtTs(t.seconds != null ? t.seconds : t.timestamp)) + '</span></div>' +
+          '<span class="top5-time">' + esc(fmtTs(t.seconds != null ? t.seconds : t.timestamp)) + '</span>' +
+          shareBtn(t.seconds, t.title) + '</div>' +
           '<p class="top5-desc">' + esc(t.description) + '</p></div>' +
           '<span class="top5-play"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="6,4 20,12 6,20"/></svg></span></a>';
       });
@@ -257,7 +267,8 @@
         html += '<details class="chapter-group"' + (i === 0 ? ' open' : '') + '>' +
           '<summary class="chapter-summary"><span class="chapter-summary-left">' +
           '<span class="chapter-time">' + esc(fmtTs(c.seconds != null ? c.seconds : c.timestamp)) + '</span>' +
-          '<span class="chapter-name">' + esc(c.title) + '</span></span>' +
+          '<span class="chapter-name">' + esc(c.title) + '</span>' +
+          shareBtn(c.seconds, c.title) + '</span>' +
           '<svg class="chapter-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6,9 12,15 18,9"/></svg>' +
           '</summary><div class="chapter-items"><div class="chapter-item">' +
           '<a class="chapter-item-time" href="' + yt(c.seconds) + '" target="_blank" rel="noopener">' + esc(fmtTs(c.seconds != null ? c.seconds : c.timestamp)) + '</a>' +
@@ -278,6 +289,7 @@
 
     html += '</article>';
     root.innerHTML = html;
+    if (window.PAShare) { window.PAShare.attach(root, data); window.PAShare.honorDeepLink(data); }
     if (window.PAYouTube) window.PAYouTube.mount();
     }
   })();

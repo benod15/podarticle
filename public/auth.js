@@ -1,5 +1,6 @@
-// public/auth.js — Google sign-in via Supabase, shared by every page.
-// Exposes window.PAAuth = { client, getSession, signIn, signOut, onAuthChange }.
+// public/auth.js — Google + email/password sign-in via Supabase, shared by every page.
+// Exposes window.PAAuth = { client, getSession, signIn, signUpWithEmail, signInWithEmail,
+//                           resetPassword, signOut, onAuthChange }.
 (function () {
   // The one place the Supabase endpoint is named. Everything else — sign-in, the OAuth
   // round trip, the `plans` lookups — goes through the client built from it.
@@ -62,6 +63,34 @@
     });
   }
 
+  // ---------- Email + password ----------
+  // For readers without a Google account. Supabase emails a confirmation link on
+  // sign-up; the session starts when they click through it.
+  async function signUpWithEmail(email, password, pendingUrl) {
+    if (pendingUrl) setPendingUrl(pendingUrl);
+    const { data, error } = await client.auth.signUp({
+      email,
+      password,
+      options: { emailRedirectTo: window.location.origin + '/index.html' },
+    });
+    if (error) throw error;
+    return data;
+  }
+
+  async function signInWithEmail(email, password, pendingUrl) {
+    if (pendingUrl) setPendingUrl(pendingUrl);
+    const { data, error } = await client.auth.signInWithPassword({ email, password });
+    if (error) throw error;
+    return data;
+  }
+
+  async function resetPassword(email) {
+    const { error } = await client.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin + '/index.html',
+    });
+    if (error) throw error;
+  }
+
   async function signOut() {
     await client.auth.signOut();
     window.location.reload();
@@ -71,7 +100,7 @@
     client.auth.onAuthStateChange((_event, session) => cb(session));
   }
 
-  window.PAAuth = { client, getSession, signIn, signOut, onAuthChange, setPendingUrl, takePendingUrl };
+  window.PAAuth = { client, getSession, signIn, signUpWithEmail, signInWithEmail, resetPassword, signOut, onAuthChange, setPendingUrl, takePendingUrl };
 
   // Render the header auth button on pages that include the slot.
   async function renderAuthButton() {

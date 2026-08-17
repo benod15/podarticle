@@ -61,8 +61,8 @@
     const note = document.createElement('p');
     note.className = 'auth-prompt-note';
     note.textContent = pendingUrl
-      ? 'We saved your link. Sign in with Google and we will pick up right where you left off — mapping is free, with no limit.'
-      : 'Sign in with Google to map an episode. Mapping is free with no limit right now, and browsing the library never needs an account.';
+      ? 'We saved your link. Sign in and we will pick up right where you left off — mapping is free, with no limit.'
+      : 'Sign in to map an episode. Mapping is free with no limit right now, and browsing the library never needs an account.';
 
     const btn = document.createElement('button');
     btn.className = 'auth-btn auth-btn-lg';
@@ -70,7 +70,65 @@
     btn.textContent = 'Continue with Google';
     btn.addEventListener('click', () => window.PAAuth.signIn({ pendingUrl }));
 
-    slot.append(note, btn);
+    const divider = document.createElement('p');
+    divider.className = 'auth-divider';
+    divider.textContent = 'or with email';
+
+    const form = document.createElement('form');
+    form.className = 'auth-email-form';
+    form.innerHTML = `
+      <input type="email" autocomplete="email" required placeholder="Email address" aria-label="Email address">
+      <input type="password" autocomplete="current-password" required minlength="6" placeholder="Password (6+ characters)" aria-label="Password">
+      <div class="auth-email-actions">
+        <button type="submit" class="auth-btn auth-btn-lg" data-mode="in">Sign in</button>
+        <button type="submit" class="auth-btn auth-btn-lg auth-btn-alt" data-mode="up">Create account</button>
+      </div>
+      <p class="auth-email-msg" hidden></p>
+      <button type="button" class="auth-forgot">Forgot password?</button>`;
+
+    const [emailEl, passEl] = form.querySelectorAll('input');
+    const msg = form.querySelector('.auth-email-msg');
+
+    function say(text, ok) {
+      msg.hidden = false;
+      msg.textContent = text;
+      msg.classList.toggle('ok', !!ok);
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const mode = e.submitter?.dataset.mode || 'in';
+      const email = emailEl.value.trim();
+      const password = passEl.value;
+      try {
+        if (mode === 'up') {
+          const data = await window.PAAuth.signUpWithEmail(email, password, pendingUrl);
+          // No session yet = Supabase sent a confirmation email.
+          say(data.session ? 'Account created — you are signed in.' : 'Check your email for a confirmation link, then sign in.', true);
+        } else {
+          await window.PAAuth.signInWithEmail(email, password, pendingUrl);
+          hideAuthPrompt();
+          if (pendingUrl) runAnalysis(pendingUrl);
+        }
+      } catch (err) {
+        say(err.message === 'Invalid login credentials'
+          ? 'That email and password don\'t match. New here? Hit Create account instead.'
+          : (err.message || 'Something went wrong — try again.'));
+      }
+    });
+
+    form.querySelector('.auth-forgot').addEventListener('click', async () => {
+      const email = emailEl.value.trim();
+      if (!email) return say('Enter your email above first, then hit Forgot password.');
+      try {
+        await window.PAAuth.resetPassword(email);
+        say('Password reset email sent — check your inbox.', true);
+      } catch (err) {
+        say(err.message || 'Could not send the reset email — try again.');
+      }
+    });
+
+    slot.append(note, btn, divider, form);
   }
 
   function hideAuthPrompt() {
@@ -214,6 +272,80 @@
   urlInput?.addEventListener('paste', () => setTimeout(tidyLinkInput, 0));
   urlInput?.addEventListener('blur', tidyLinkInput);
 
+  // ---------- In-site YouTube search ----------
+  // Typing words (not a link) searches YouTube through /api/search and offers up to
+  // 8 long-form videos; picking one starts the same analysis a pasted link would.
+  const resultsBox = document.querySelector('[data-yt-results]');
+
+  function hideResults() {
+    if (resultsBox) {
+      resultsBox.hidden = true;
+      resultsBox.replaceChildren();
+    }
+  }
+
+  function renderResults(items, query) {
+    if (!resultsBox) return;
+    resultsBox.replaceChildren();
+    if (!items.length) {
+      const p = document.createElement('p');
+      p.className = 'yt-results-empty';
+      p.textContent = `No long episodes found for “${query}” — try a show or guest name, or paste the YouTube link.`;
+      resultsBox.appendChild(p);
+      resultsBox.hidden = false;
+      return;
+    }
+    for (const v of items) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'yt-result';
+      const mins = v.duration_sec ? Math.round(v.duration_sec / 60) : null;
+      btn.innerHTML = `
+        <img loading="lazy" alt="">
+        <span class="yt-result-body">
+          <span class="yt-result-title"></span>
+          <span class="yt-result-meta"></span>
+        </span>`;
+      window.PAThumb.bind(btn.querySelector('img')).src = v.thumbnail;
+      btn.querySelector('.yt-result-title').textContent = v.title;
+      btn.querySelector('.yt-result-meta').textContent =
+        [v.channel, mins ? `${mins} min` : null].filter(Boolean).join(' · ');
+      btn.addEventListener('click', () => {
+        hideResults();
+        if (urlInput) urlInput.value = `https://www.youtube.com/watch?v=${v.video_id}`;
+        runAnalysis(`https://www.youtube.com/watch?v=${v.video_id}`);
+      });
+      resultsBox.appendChild(btn);
+    }
+    resultsBox.hidden = false;
+  }
+
+  let searchTimer = null;
+  let searchSeq = 0;
+
+  async function searchYouTube(query) {
+    const seq = ++searchSeq;
+    try {
+      const r = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+      const data = await r.json().catch(() => ({}));
+      if (seq !== searchSeq) return; // a newer keystroke owns the box
+      renderResults(r.ok ? data.results || [] : [], query);
+    } catch {
+      if (seq === searchSeq) renderResults([], query);
+    }
+  }
+
+  urlInput?.addEventListener('input', () => {
+    const val = urlInput.value.trim();
+    clearTimeout(searchTimer);
+    // Links stay on the paste path — no dropdown while a URL is in the box.
+    if (val.length < 3 || /youtu/i.test(val)) {
+      hideResults();
+      return;
+    }
+    searchTimer = setTimeout(() => searchYouTube(val), 350);
+  });
+
   async function runAnalysis(url) {
     const btn = form?.querySelector('button[type="submit"]');
     const session = await window.PAAuth?.getSession();
@@ -270,13 +402,13 @@
         urlInput?.focus();
         return;
       }
-      // Nothing resembling a YouTube address: say so here rather than asking someone to
-      // sign in first, only to reject the link a moment later.
+      // Not a YouTube address → treat the box as a search and show episodes to pick.
       if (!/youtu/i.test(url)) {
-        failProgress('BAD_URL', true);
-        urlInput?.focus();
+        searchSeq++;
+        searchYouTube(url);
         return;
       }
+      hideResults();
       runAnalysis(url);
     });
 

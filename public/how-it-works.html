@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>How it works — PodArticle</title>
+  <meta name="description" content="How PodArticle works: search for a podcast episode or paste a YouTube link, get a section-by-section map with verified timestamps, and watch only the parts that matter to you.">
+  <meta property="og:title" content="How PodArticle works">
+  <meta property="og:description" content="Search or paste a podcast episode, get a section-by-section map with verified timestamps, and watch only the parts that matter.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://podarticle.com/how-it-works.html">
+  <link rel="canonical" href="https://podarticle.com/how-it-works.html">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="site-header-inner">
+      <a class="brand-mark" href="index.html" aria-label="PodArticle home">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"/><polygon points="10,8 16,12 10,16" fill="currentColor" stroke="none"/>
+        </svg>
+        <span>PodArticle</span>
+      </a>
+      <nav class="site-nav" aria-label="Main navigation">
+        <a href="how-it-works.html">How it works</a>
+        <a href="index.html#feed">Episode library</a>
+        <span data-auth-slot></span>
+        <button class="theme-toggle" data-theme-toggle aria-label="Switch to dark mode"></button>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero wrap">
+      <h1>How PodArticle <em>works</em></h1>
+      <p class="hero-note" style="max-width:620px;margin:0 auto;">PodArticle turns a long podcast episode into a map: every section labeled, every timestamp checked against the actual transcript. You watch the parts you care about and skip the rest.</p>
+    </section>
+
+    <section class="wrap" style="max-width:680px;margin:0 auto 4rem;">
+
+      <div class="hiw-step">
+        <span class="hiw-num">1</span>
+        <div>
+          <h2>Find your episode</h2>
+          <p>Type a show, guest, or topic into the box on the homepage and pick the episode from the results — no need to leave the site. Already have the YouTube link? Paste it instead. Messy links from the YouTube share sheet are fine; we tidy them automatically.</p>
+        </div>
+      </div>
+
+      <div class="hiw-step">
+        <span class="hiw-num">2</span>
+        <div>
+          <h2>We map the episode</h2>
+          <p>PodArticle pulls the episode's full caption track, then reads it end to end and builds a section-by-section map: a summary, the Top 5 moments worth your time, and a full section map covering the entire episode. Timestamps are matched against the transcript — never guessed.</p>
+          <p>Mapping your own episodes needs a free sign-in (Google or email). Browsing episodes other people have mapped never needs an account.</p>
+        </div>
+      </div>
+
+      <div class="hiw-step">
+        <span class="hiw-num">3</span>
+        <div>
+          <h2>Watch only what matters</h2>
+          <p>Tap any moment or section and the episode plays right on the page from that exact second. Found something a friend would love? Every moment has a small share icon — copy a link to that exact moment, post it, or text it. Whoever opens it lands on that moment.</p>
+        </div>
+      </div>
+
+      <div class="hiw-faq">
+        <h2>Quick answers</h2>
+        <p><strong>Is it free?</strong> Yes — free while we grow, with no cap on how many episodes you map. We'll never pull a bait-and-switch; if pricing ever arrives, early users hear it from us first.</p>
+        <p><strong>Does it work on any podcast?</strong> Any podcast on YouTube with captions. Very new episodes sometimes need a few hours before their captions are ready — if that happens, we'll tell you to try again later rather than show you a half-built map.</p>
+        <p><strong>Do creators lose out?</strong> No. Every timestamp plays the original video on YouTube — views and ads stay with the creator. We're a discovery layer that sends episodes more viewers, not fewer.</p>
+        <p><strong>Something broke.</strong> Email <a href="mailto:support@podarticle.com">support@podarticle.com</a> with the link and we'll take a look.</p>
+      </div>
+
+      <p style="text-align:center;margin-top:2.5rem;"><a class="btn-primary" href="index.html">Map your first episode</a></p>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap-wide footer-inner">
+      <a class="brand-mark" href="index.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"/><polygon points="10,8 16,12 10,16" fill="currentColor" stroke="none"/>
+        </svg>
+        <span>PodArticle</span>
+      </a>
+      <nav class="footer-links" aria-label="Footer">
+        <a href="index.html#feed">Episode library</a>
+        <a href="pricing.html">Pricing</a>
+        <a href="mailto:support@podarticle.com">Contact</a>
+      </nav>
+      <p class="footer-bug">Found a bug? Email <a href="mailto:support@podarticle.com">support@podarticle.com</a></p>
+      <p class="footer-copy">Made for people who love podcasts but don't have 90 minutes. &copy; 2026 PodArticle.</p>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="messages.js"></script>
+  <script src="theme.js" defer></script>
+  <script src="auth.js" defer></script>
+</body>
+</html>

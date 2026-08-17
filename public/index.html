@@ -27,7 +27,7 @@
         <span>PodArticle</span>
       </a>
       <nav class="site-nav" aria-label="Main navigation">
-        <a href="#how">How it works</a>
+        <a href="how-it-works.html">How it works</a>
         <a href="#feed">Episode library</a>
         <span data-auth-slot></span>
         <button class="theme-toggle" data-theme-toggle aria-label="Switch to dark mode"></button>
@@ -39,16 +39,17 @@
 
     <!-- ============ HERO: the tool ============ -->
     <section class="hero wrap">
-      <h1>Paste a podcast link. Watch only the parts that <em>matter to you</em>.</h1>
+      <h1>Find a podcast. Watch only the parts that <em>matter to you</em>.</h1>
 
       <form class="link-form" data-link-form>
-        <input type="text" inputmode="url" autocomplete="off" spellcheck="false" data-link-input placeholder="Paste any YouTube podcast link..." aria-label="Podcast link">
+        <input type="text" inputmode="text" autocomplete="off" spellcheck="false" data-link-input placeholder="Search a show, episode, or guest — or paste a YouTube link..." aria-label="Search podcasts or paste a YouTube link">
         <button type="submit">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 21l-4.35-4.35M17 10.5a6.5 6.5 0 1 1-13 0 6.5 6.5 0 0 1 13 0z"/></svg>
           Analyze
         </button>
       </form>
-      <p class="link-tip">On YouTube, tap <strong>Share</strong> then <strong>Copy link</strong> — that link always works. Messy links are fine too; we tidy them up.</p>
+      <div class="yt-results" data-yt-results hidden></div>
+      <p class="link-tip">Type a show or guest name and pick the episode — or paste a link straight from YouTube. Either works.</p>
       <p class="hero-note">Browsing the library is free and needs no account. Sign in with Google to map your own — <strong>free while we grow</strong>, with no cap on how many you map. Every timestamp is <strong>verified against the actual transcript</strong> before it reaches you.</p>
       <div class="auth-prompt" data-auth-prompt hidden></div>
 
