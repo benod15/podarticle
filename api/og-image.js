@@ -161,13 +161,12 @@ export default async function handler(req) {
                   left: 0,
                   right: 0,
                   bottom: 0,
-                  height: 300,
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'flex-end',
-                  padding: '0 56px 46px',
-                  backgroundImage:
-                    'linear-gradient(to top, rgba(12,12,9,0.94), rgba(12,12,9,0.6) 55%, rgba(12,12,9,0))',
+                  padding: '26px 56px 34px',
+                  backgroundColor: 'rgba(12,12,9,0.88)',
+                  borderTop: '3px solid #4a7669',
                 },
                 children: [
                   {
@@ -191,7 +190,7 @@ export default async function handler(req) {
                           type: 'div',
                           props: {
                             style: {
-                              color: '#e8e4da',
+                              color: '#f2efe6',
                               fontSize: 19,
                               fontWeight: 700,
                               letterSpacing: 5,
@@ -252,7 +251,7 @@ export default async function handler(req) {
                     ? {
                         type: 'div',
                         props: {
-                          style: { color: '#c9c4b8', fontSize: 21, marginTop: 10, display: 'flex' },
+                          style: { color: '#d6d1c4', fontSize: 21, marginTop: 10, display: 'flex' },
                           children: `${show} · full episode map`,
                         },
                       }
