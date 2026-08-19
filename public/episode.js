@@ -175,11 +175,11 @@
   if (allVerified && data.chapters_found > 0) {
     html += '<div class="verified-badge">' +
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg>' +
-      'Every timestamp below is matched to the show\'s own YouTube chapters and checked against the spoken transcript.</div>';
+      'Every timestamp below is pulled from the episode\'s actual transcript, aligned to the show\'s own YouTube chapters.</div>';
   } else if (data.chapters_found === 0) {
     html += '<div class="verified-badge" style="border-color:#c9a86a;color:#8a7a5a;">' +
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>' +
-      'This video has no official chapters — timestamps are approximate, derived from the transcript.</div>';
+      'This video has no official chapters — timestamps are pulled from the episode\'s actual transcript.</div>';
   }
 
   // Top 5

@@ -16,7 +16,7 @@ const HUBS = {
     title: 'Tech & AI Podcast Episode Maps',
     heading: 'Tech episodes, mapped',
     blurb:
-      'AI launches, startup stories, big-tech strategy — the long interviews, mapped into the sections worth your time. Every timestamp verified against the transcript.',
+      'AI launches, startup stories, big-tech strategy — the long interviews, mapped into the sections worth your time. Every timestamp pulled from the actual transcript.',
   },
   finance: {
     title: 'Finance & Crypto Podcast Episode Maps',

@@ -608,14 +608,6 @@
 
   // Category tabs (All / Sports / Tech / Finance / Politics). Static seed cards carry
   // data-category; DB episodes bring it from the API.
-  const tabs = document.querySelector('[data-library-tabs]');
-  tabs?.addEventListener('click', (e) => {
-    const tab = e.target.closest('[data-category]');
-    if (!tab) return;
-    activeCategory = tab.getAttribute('data-category');
-    tabs.querySelectorAll('.library-tab').forEach((t) => t.classList.toggle('active', t === tab));
-    render();
-  });
 
   function sortLibrary(items, mode) {
     const arr = items.slice();

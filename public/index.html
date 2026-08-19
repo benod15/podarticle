@@ -4,9 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>PodArticle — Podcast articles: watch only the parts that matter to you</title>
-  <meta name="description" content="PodArticle turns any podcast episode into a podarticle — a section-by-section map with transcript-verified timestamps, so you watch only the parts that matter to you. Free to use.">
+  <meta name="description" content="PodArticle turns any podcast episode into a podarticle — a section-by-section map with timestamps pulled from the actual transcript, so you watch only the parts that matter to you. Free to use.">
   <meta property="og:title" content="PodArticle — Podcast articles">
-  <meta property="og:description" content="PodArticle turns any podcast episode into a podarticle — a section-by-section map with transcript-verified timestamps. Free to use.">
+  <meta property="og:description" content="PodArticle turns any podcast episode into a podarticle — a section-by-section map with timestamps pulled from the actual transcript. Free to use.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://podarticle.com/">
   <link rel="canonical" href="https://podarticle.com/">
@@ -50,7 +50,7 @@
       </form>
       <div class="yt-results" data-yt-results hidden></div>
       <p class="link-tip">Type a show or guest name and pick the episode — or paste a link straight from YouTube. Either works.</p>
-      <p class="hero-note">Browsing the library is free and needs no account. Sign in with Google or any email to map your own — <strong>free while we grow</strong>, with no cap on how many you map. Every timestamp is <strong>verified against the actual transcript</strong> before it reaches you.</p>
+      <p class="hero-note">Browsing the library is free and needs no account. Sign in with Google or any email to map your own — <strong>free while we grow</strong>, with no cap on how many you map. Every timestamp is <strong>pulled from the episode’s actual transcript</strong> — never guessed.</p>
       <div class="auth-prompt" data-auth-prompt hidden></div>
 
       <div class="analysis-progress" data-progress hidden>
@@ -77,8 +77,8 @@
           <div class="strip-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg>
           </div>
-          <h3>Verified timestamps</h3>
-          <p>Every timestamp is checked against the real transcript before it reaches you.</p>
+          <h3>Transcript-pulled timestamps</h3>
+          <p>Every timestamp is pulled from the episode’s actual transcript — never guessed.</p>
         </div>
         <div class="strip-item">
           <div class="strip-icon">
@@ -94,14 +94,6 @@
     <section class="feed wrap-wide" id="feed">
       <div class="section-head">
         <h2>Episode library</h2>
-        <div class="library-tabs" data-library-tabs role="tablist" aria-label="Filter by category">
-          <button type="button" class="library-tab active" data-category="all">All</button>
-          <button type="button" class="library-tab" data-category="sports">Sports</button>
-          <button type="button" class="library-tab" data-category="tech">Tech</button>
-          <button type="button" class="library-tab" data-category="finance">Finance</button>
-          <button type="button" class="library-tab" data-category="politics">Politics</button>
-          <button type="button" class="library-tab" data-category="general">Other</button>
-        </div>
         <div class="library-controls">
           <input type="search" class="library-search" data-library-search placeholder="Search YouTube — shows, episodes, guests..." aria-label="Search YouTube for podcasts">
           <select class="library-sort" data-library-sort aria-label="Sort the episode library">
