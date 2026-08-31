@@ -9,7 +9,7 @@
   // consent screen shows the host to the reader. Supabase keeps serving the original
   // *.supabase.co host, so reverting this one line is a complete rollback.
   // Steps: docs/brand-ops.md.
-  const SUPABASE_URL = 'https://api.podarticle.com';
+  const SUPABASE_URL = 'https://agmajezadtqkrnuwlmyk.supabase.co';
   const SUPABASE_ANON_KEY = 'sb_publishable_eZBBoI-WqjJV0pGwBPVjSw_0V1fGKyn';
 
   if (!window.supabase) {
