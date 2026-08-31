@@ -1,54 +1,73 @@
-# PodArticle — production (Vercel)
+# PodArticle
 
-Turns YouTube podcast episodes into podarticles: section-by-section maps with transcript-verified timestamps and a Top 5 of what to watch.
+**Find a podcast. Watch only the parts that matter to you.**
+
+PodArticle turns long-form YouTube podcast episodes into searchable episode maps: transcript-pulled, timestamped sections you can click to seek, concise summaries, and shareable deep links to any moment.
+
+**Live:** [podarticle.com](https://podarticle.com)
+
+![Homepage](docs/screenshots/home.png)
+
+## What it does
+
+- **Search-first discovery** — type a show, episode, or guest; live YouTube results start analysis on selection (pasting a URL works too)
+- **Episode maps** — an LLM-generated section map with timestamps pulled from the episode's actual transcript, never guessed
+- **One-click seek** — the embedded YouTube player jumps straight to the moment you care about
+- **Shareable moments** — server-rendered deep links (`/e/<video-id>?t=<seconds>`) with social metadata in the initial HTML
+- **Library** — a curated public library anyone can browse, plus a personal library per signed-in reader
+
+![Episode page](docs/screenshots/episode.png)
 
 ## Architecture
 
-- `public/` — static frontend (index, pricing, episode template, seeded episode pages, app.js)
-- `api/` — Vercel serverless functions (Node 18+)
-  - `analyze.js` — POST `{url}` → metadata (Supadata) → transcript (Supadata, full caption track) → section map (Gemini, user's key) → save to library (Supabase)
-  - `episodes.js` — GET library index / single episode by slug
-  - `sitemap.js` — sitemap regenerated from the library on every request
-- `lib/` — shared modules (youtube.js, gemini.js, db.js, auth.js)
-- `docs/brand-ops.md` — custom auth domain + support mailbox setup (DNS/dashboard work)
+```
+Browser (static HTML/JS, no build step)
+   │
+   ▼
+Vercel ── Node serverless functions (/api/*)
+   │        ├─ /api/analyze     → metadata + transcript → LLM map → store
+   │        ├─ /api/episode-page → server-rendered share pages
+   │        └─ /api/sitemap     → dynamic sitemap for discovery
+   ▼
+Supadata (transcripts) ──► Gemini (episode map) ──► Supabase (Postgres + Auth)
+```
 
-## Environment variables
+| Layer | Choice |
+|---|---|
+| Frontend | Vanilla HTML/JS static pages (server-rendered where crawlers matter) |
+| Backend | Node serverless functions on Vercel |
+| Database & auth | Supabase Postgres with Row-Level Security, Google + email OAuth |
+| Transcripts | Supadata API |
+| LLM | Gemini Flash Lite |
+| Payments | Stripe (dormant — free mode via `PAYWALL_ENABLED` flag) |
 
-Copy `.env.example` → set in the Vercel dashboard. Never commit real keys.
+## Engineering highlights
 
-| Var | Where to get it |
-| --- | --- |
-| `GEMINI_API_KEY` | aistudio.google.com → Get API key |
-| `SUPADATA_API_KEY` | dash.supadata.ai → API keys (free: 100 credits/mo) |
-| `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` / `SUPABASE_ANON_KEY` | Supabase project → Settings → API |
-| `PAYWALL_ENABLED` | leave unset/`false` — PodArticle is free for everyone right now |
-| `STRIPE_*` | dashboard.stripe.com (only read when the paywall is switched on) |
+- **Transcript-grounded timestamps** — the pipeline polls long transcript jobs and rejects any map whose transcript covers under 60% of the video's duration; all copy says "pulled from the actual transcript," never "verified"
+- **Multi-tenant library** — a `library_entries` join table with RLS separates the globally reusable episode map from each reader's personal library, so cache hits never lose per-user ownership
+- **Crawler-safe sharing** — share pages are server-rendered because X and other crawlers don't execute client-side metadata injection; OG thumbnails are proxied and cached from our own domain
+- **Cost guards** — videos over 5 hours are rejected before any transcript/model spend; bulk seed runs are idempotent and provider-paced
+- **Creator-safe playback** — official YouTube embeds preserve the creator's player, views, and ad delivery
+- **Config-driven monetization** — Stripe checkout, billing portal, and usage gating ship in the codebase but stay dormant behind `PAYWALL_ENABLED`
 
-## Free mode
+## Status
 
-PodArticle is free and uncapped while we grow the first regular users. `checkAllowance`
-in `lib/auth.js` returns `allowed` unconditionally unless `PAYWALL_ENABLED=true`, so
-`/api/analyze` never returns `LIMIT_REACHED` — the limit is off server-side, not just
-hidden in the UI.
+Live and stable in maintenance mode as of August 2026. Free to use.
 
-The free-5 gate, the pricing page and the Stripe endpoints all stay in the repo. To
-re-arm the paywall: set `PAYWALL_ENABLED=true`, fill in the `STRIPE_*` vars, and
-un-pause the plan buttons in `public/pricing.html`.
+## Development
 
-## Supabase schema
+All configuration is environment-driven; no secrets live in this repo.
 
-Run the SQL in `lib/db.js`'s header comment in the Supabase SQL editor
-(creates `episodes` + `usage` tables).
+| Variable | Purpose |
+|---|---|
+| `SUPABASE_URL` / `SUPABASE_ANON_KEY` / `SUPABASE_SERVICE_ROLE_KEY` | Supabase project (Settings → API) |
+| `GEMINI_API_KEY` / `GEMINI_MODEL` | Episode-map generation |
+| `SUPADATA_API_KEY` | Transcript retrieval |
+| `PAYWALL_ENABLED` | `false` = free mode |
+| `STRIPE_*` | Dormant billing path |
 
-## Deploy
+Deploys run through the Vercel CLI (`vercel --prod`).
 
-1. Push this directory to GitHub
-2. Vercel → Import project → framework: Other, root = this directory
-3. Add env vars → Deploy
-4. Domains: podarticle.com as canonical; 301 redirect podarticles.com, podcastarticle.com, podcastarticles.com
+---
 
-## Notes
-
-- Transcript coverage is full-episode by construction: Supadata returns YouTube's complete caption track (`mode=native`, 1 credit/analysis). Videos too new to have captions get the graceful "Transcript not available yet" message.
-- `mode=native` keeps cost at 1 credit per analysis. Switch to `mode=auto` in `lib/youtube.js` if you want AI fallback transcription for uncaptioned videos (2 credits/minute).
-- The seed library cards in `public/index.html` are static; the live library merges in from `/api/episodes` and dedupes by video ID.
+Built by Ben ODonnell. Code shared for review; not licensed for reuse.
